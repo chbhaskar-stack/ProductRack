@@ -264,10 +264,6 @@
         <span class="header-badge">Fashion Catalog Studio</span>
         <h1>Build premium product collections with elegance.</h1>
         <p>Apparels · Fabrics · Accessories · Madeups — designed for modern fashion brands, wholesalers, and boutique catalog teams.</p>
-        <div class="cloud-status disconnected" id="cloudStatus">
-          <span class="dot"></span>
-          <span id="cloudStatusText">Cloud Storage: Not Configured</span>
-        </div>
       </div>
       <div class="hero-panel">
         <div>
@@ -281,34 +277,6 @@
           <span class="hero-pill">☁️ Cloud sync</span>
         </div>
       </div>
-    </div>
-  </div>
-
-  <!-- INLINE CONFIG PANEL -->
-  <div class="inline-config" id="inlineConfig">
-    <h3>☁️ Cloud Storage Setup</h3>
-    <p style="color:#666;font-size:13px;margin-bottom:16px;">Paste your Supabase credentials below. Get them from <a href="https://supabase.com" target="_blank">supabase.com</a> → Project Settings → API.</p>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Supabase URL</label>
-        <input type="text" id="inlineUrl" placeholder="https://yourproject.supabase.co">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Supabase Anon Key</label>
-        <input type="text" id="inlineKey" placeholder="eyJhbGciOiJIUzI1NiIs...">
-      </div>
-    </div>
-    <div class="form-row">
-      <div class="form-group">
-        <label>Bucket Name</label>
-        <input type="text" id="inlineBucket" value="catalogue-images" placeholder="catalogue-images">
-      </div>
-    </div>
-    <div class="btn-group">
-      <button class="btn-secondary" onclick="hideInlineConfig()">Cancel</button>
-      <button class="btn-primary" onclick="saveInlineConfig()">💾 Save & Connect</button>
     </div>
   </div>
 
@@ -368,7 +336,6 @@
   <div class="controls">
     <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by name, code, color, or material...">
     <button class="add-btn" id="addBtn">+ Add Product</button>
-    <button class="sync-btn" id="syncBtn">⚙️ Setup Cloud</button>
     <button class="export-btn" id="exportBtn">📥 Export CSV</button>
   </div>
 
@@ -693,62 +660,6 @@ function generateImageNames(sku, count) {
 }
 
 // ===================== INLINE CONFIG =====================
-function showInlineConfig() {
-  if (cloudConfig) {
-    if (confirm('Cloud is already configured. Disconnect?')) {
-      cloudConfig = null;
-      localStorage.removeItem(CLOUD_CONFIG_KEY);
-      updateCloudStatus(false);
-      showToast('Cloud storage disconnected', 'success');
-      renderStats();
-      renderItems();
-    }
-    return;
-  }
-  document.getElementById('inlineConfig').classList.add('active');
-}
-
-function hideInlineConfig() {
-  document.getElementById('inlineConfig').classList.remove('active');
-}
-
-function saveInlineConfig() {
-  const url = document.getElementById('inlineUrl').value.trim();
-  const key = document.getElementById('inlineKey').value.trim();
-  const bucket = document.getElementById('inlineBucket').value.trim() || 'catalogue-images';
-
-  if (!url || !key) {
-    showToast('Please enter both URL and API key', 'error');
-    return;
-  }
-
-  cloudConfig = { url, key, bucket, provider: 'supabase' };
-  saveCloudConfig();
-  hideInlineConfig();
-  updateCloudStatus(true);
-  showToast('Cloud storage connected!', 'success');
-  renderStats();
-
-  // Test connection
-  testCloudConnection();
-}
-
-async function testCloudConnection() {
-  try {
-    const { url, key } = cloudConfig;
-    const response = await fetch(`${url}/storage/v1/bucket`, {
-      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
-    });
-    if (response.ok) {
-      showToast('Cloud connection verified!', 'success');
-    } else {
-      showToast('Connection warning: Check your API key permissions', 'error');
-    }
-  } catch (e) {
-    showToast('Could not verify connection. Check URL and internet.', 'error');
-  }
-}
-
 // ===================== RENDERING =====================
 function renderTabs() {
   const tabsContainer = document.getElementById('categoryTabs');
@@ -1325,7 +1236,6 @@ document.getElementById('cancelBtn').addEventListener('click', closeModal);
 document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
 document.getElementById('searchBox').addEventListener('input', renderItems);
 
-document.getElementById('syncBtn').addEventListener('click', showInlineConfig);
 document.getElementById('generateCatalogBtn').addEventListener('click', openCatalogGenerator);
 document.getElementById('catalogCancelBtn').addEventListener('click', closeCatalogGenerator);
 document.getElementById('catalogGenOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('catalogGenOverlay')) closeCatalogGenerator(); });
@@ -1351,7 +1261,6 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ===================== INITIALIZATION =====================
-loadCloudConfig();
 loadItems();
 renderTabs();
 renderStats();
