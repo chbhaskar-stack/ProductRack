@@ -129,6 +129,9 @@ function resetCatalogForm() {
   document.getElementById('catalogPrice').value = '';
   document.getElementById('catalogStock').value = '';
   document.getElementById('catalogStatus').value = 'active';
+  document.getElementById('catalogImageUrl').value = '';
+  document.getElementById('catalogDescription').value = '';
+  document.getElementById('catalogImageFile').value = '';
 }
 
 function showCatalogForm() {
@@ -157,6 +160,12 @@ function renderCatalogTable() {
       </td>
     </tr>
   `).join('');
+  const catalogCount = document.getElementById('catalogCount');
+  if (catalogCount) catalogCount.textContent = catalogItems.length;
+  const totalStock = document.getElementById('totalStock');
+  if (totalStock) totalStock.textContent = catalogItems.reduce((sum, item) => sum + Number(item.stock || 0), 0);
+  const catalogValue = document.getElementById('catalogValue');
+  if (catalogValue) catalogValue.textContent = `$${catalogItems.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.stock || 0), 0).toFixed(2)}`;
 }
 
 async function loadCatalogs() {
@@ -169,6 +178,19 @@ async function loadCatalogs() {
 
 async function handleCatalogSubmit(e) {
   e.preventDefault();
+  const fileInput = document.getElementById('catalogImageFile');
+  let imageUrl = document.getElementById('catalogImageUrl').value;
+  if (fileInput?.files?.[0]) {
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    const uploadRes = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${getStoredToken()}` },
+      body: formData
+    });
+    const uploadData = await uploadRes.json();
+    imageUrl = uploadData.url || imageUrl;
+  }
   const payload = {
     id: document.getElementById('catalogId').value || undefined,
     name: document.getElementById('catalogName').value,
@@ -176,7 +198,9 @@ async function handleCatalogSubmit(e) {
     category: document.getElementById('catalogCategory').value,
     price: document.getElementById('catalogPrice').value,
     stock: document.getElementById('catalogStock').value,
-    status: document.getElementById('catalogStatus').value
+    status: document.getElementById('catalogStatus').value,
+    image_url: imageUrl,
+    description: document.getElementById('catalogDescription').value
   };
   const method = payload.id ? 'PUT' : 'POST';
   const response = await fetch('/api/catalogs', {
@@ -210,7 +234,32 @@ async function handleCatalogAction(target) {
   document.getElementById('catalogPrice').value = item.price;
   document.getElementById('catalogStock').value = item.stock;
   document.getElementById('catalogStatus').value = item.status;
+  document.getElementById('catalogImageUrl').value = item.image_url || '';
+  document.getElementById('catalogDescription').value = item.description || '';
   showCatalogForm();
+}
+
+async function exportCatalogs() {
+  const response = await fetch('/api/export', { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+  const data = await response.text();
+  const blob = new Blob([data], { type: 'application/json' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'catalog-export.json';
+  link.click();
+}
+
+async function importCatalogs(file) {
+  const text = await file.text();
+  const data = JSON.parse(text);
+  const response = await fetch('/api/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getStoredToken()}` },
+    body: JSON.stringify(data)
+  });
+  if (response.ok) {
+    await loadCatalogs();
+  }
 }
 
 async function renderDashboard() {
@@ -265,6 +314,37 @@ async function renderAdmin() {
       </td>
     </tr>
   `).join('');
+  const tenantName = document.getElementById('tenantName');
+  if (tenantName) tenantName.textContent = user.tenant_id || 'default';
+  const tenantUserCount = document.getElementById('tenantUserCount');
+  if (tenantUserCount) tenantUserCount.textContent = users.length;
+  const tenantCatalogCount = document.getElementById('tenantCatalogCount');
+  if (tenantCatalogCount) tenantCatalogCount.textContent = catalogItems.length || 0;
+  const tenantUserSelect = document.getElementById('tenantUserSelect');
+  if (tenantUserSelect) {
+    tenantUserSelect.innerHTML = users.map(u => `<option value="${u.id}">${u.name} (${u.email})</option>`).join('');
+  }
+  const roleResponse = await fetch('/api/roles', { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+  if (roleResponse.ok) {
+    const roleData = await roleResponse.json();
+    const roleAssignments = roleData.roles || [];
+    const roleSummary = roleAssignments.reduce((acc, role) => `${acc}${role.name || role.email} (${role.role})\n`, '');
+    if (roleSummary) {
+      const summaryNode = document.getElementById('tenantRoleSummary');
+      if (summaryNode) summaryNode.textContent = roleSummary;
+    }
+  }
+}
+
+async function assignTenantRole() {
+  const userId = document.getElementById('tenantUserSelect')?.value;
+  const role = document.getElementById('tenantRoleSelect')?.value;
+  if (!userId || !role) return;
+  await fetch('/api/roles', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getStoredToken()}` },
+    body: JSON.stringify({ user_id: Number(userId), role })
+  });
 }
 
 async function handleAdminAction(target) {
@@ -306,6 +386,12 @@ function bindDashboardActions() {
   document.getElementById('catalogTableBody')?.addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (btn) handleCatalogAction(btn);
+  });
+  document.getElementById('exportCatalogBtn')?.addEventListener('click', exportCatalogs);
+  document.getElementById('saveTenantRoleBtn')?.addEventListener('click', assignTenantRole);
+  document.getElementById('importCatalogInput')?.addEventListener('change', async (e) => {
+    const file = e.target.files?.[0];
+    if (file) await importCatalogs(file);
   });
 }
 

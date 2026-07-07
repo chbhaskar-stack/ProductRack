@@ -22,6 +22,36 @@
           <p class="small">Manage all accounts from one place.</p>
         </div>
       </div>
+      <div class="panel" style="padding:20px; margin-bottom: 16px;">
+        <h3>Tenant analytics</h3>
+        <p class="small">Review the health of your tenant workspace and role assignments.</p>
+        <div class="kpis" style="margin-top: 12px;">
+          <div class="kpi"><span class="small">Tenant</span><strong id="tenantName">default</strong></div>
+          <div class="kpi"><span class="small">Users</span><strong id="tenantUserCount">0</strong></div>
+          <div class="kpi"><span class="small">Catalogs</span><strong id="tenantCatalogCount">0</strong></div>
+        </div>
+      </div>
+      <div class="panel" style="padding:20px; margin-bottom: 16px;">
+        <h3>Tenant role management</h3>
+        <p class="small">Assign workspace roles to collaborators for this tenant.</p>
+        <div class="form-grid" style="margin-top: 12px;">
+          <div class="form-group">
+            <label for="tenantUserSelect">User</label>
+            <select id="tenantUserSelect"></select>
+          </div>
+          <div class="form-group">
+            <label for="tenantRoleSelect">Role</label>
+            <select id="tenantRoleSelect">
+              <option value="member">Member</option>
+              <option value="admin">Admin</option>
+              <option value="viewer">Viewer</option>
+            </select>
+          </div>
+          <div class="form-actions" style="grid-column: 1 / -1; justify-content: flex-end;">
+            <button class="btn btn-primary" id="saveTenantRoleBtn" type="button">Assign role</button>
+          </div>
+        </div>
+      </div>
       <div class="table-wrap">
         <table>
           <thead>

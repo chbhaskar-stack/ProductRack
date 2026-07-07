@@ -34,7 +34,17 @@ function initDb() {
       price REAL NOT NULL DEFAULT 0,
       stock INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'active',
+      image_url TEXT,
+      description TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+
+    CREATE TABLE IF NOT EXISTS tenant_roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tenant_id TEXT NOT NULL,
+      user_id INTEGER NOT NULL,
+      role TEXT NOT NULL DEFAULT 'member',
+      UNIQUE(tenant_id, user_id)
     );
   `);
 
@@ -94,9 +104,9 @@ function updateUserStatus(id, status) {
   db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, id);
 }
 
-function createCatalog({ tenantId, name, sku, category, price, stock, status }) {
-  const insert = db.prepare('INSERT INTO catalogs (tenant_id, name, sku, category, price, stock, status) VALUES (?, ?, ?, ?, ?, ?, ?)');
-  const result = insert.run(tenantId, name, sku, category, price, stock, status);
+function createCatalog({ tenantId, name, sku, category, price, stock, status, imageUrl, description }) {
+  const insert = db.prepare('INSERT INTO catalogs (tenant_id, name, sku, category, price, stock, status, image_url, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+  const result = insert.run(tenantId, name, sku, category, price, stock, status, imageUrl || null, description || null);
   return db.prepare('SELECT * FROM catalogs WHERE id = ?').get(result.lastInsertRowid);
 }
 
@@ -120,6 +130,18 @@ function deleteCatalog(id) {
   db.prepare('DELETE FROM catalogs WHERE id = ?').run(id);
 }
 
+function setTenantRole(tenantId, userId, role) {
+  db.prepare('INSERT INTO tenant_roles (tenant_id, user_id, role) VALUES (?, ?, ?) ON CONFLICT(tenant_id, user_id) DO UPDATE SET role = excluded.role').run(tenantId, userId, role);
+}
+
+function getTenantRoles(tenantId) {
+  return db.prepare('SELECT tr.role, u.id, u.name, u.email FROM tenant_roles tr JOIN users u ON u.id = tr.user_id WHERE tr.tenant_id = ?').all(tenantId);
+}
+
+function getTenantRole(tenantId, userId) {
+  return db.prepare('SELECT role FROM tenant_roles WHERE tenant_id = ? AND user_id = ?').get(tenantId, userId);
+}
+
 initDb();
 
 module.exports = {
@@ -138,5 +160,8 @@ module.exports = {
   createCatalog,
   listCatalogs,
   updateCatalog,
-  deleteCatalog
+  deleteCatalog,
+  setTenantRole,
+  getTenantRoles,
+  getTenantRole
 };

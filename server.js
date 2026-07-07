@@ -14,10 +14,15 @@ const {
   createCatalog,
   listCatalogs,
   updateCatalog,
-  deleteCatalog
+  deleteCatalog,
+  setTenantRole,
+  getTenantRoles,
+  getTenantRole
 } = require('./db');
 
 const root = __dirname;
+const uploadsDir = path.join(root, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 function sendJson(res, statusCode, payload) {
   res.writeHead(statusCode, { 'Content-Type': 'application/json' });
@@ -124,7 +129,7 @@ function startServer(port = 8000) {
 
         if (req.method === 'POST') {
           const body = await readBody(req);
-          const item = createCatalog({ tenantId: user.tenant_id, name: body.name, sku: body.sku, category: body.category, price: Number(body.price || 0), stock: Number(body.stock || 0), status: body.status || 'active' });
+          const item = createCatalog({ tenantId: user.tenant_id, name: body.name, sku: body.sku, category: body.category, price: Number(body.price || 0), stock: Number(body.stock || 0), status: body.status || 'active', imageUrl: body.image_url || null, description: body.description || null });
           return sendJson(res, 201, { item });
         }
 
@@ -136,7 +141,9 @@ function startServer(port = 8000) {
             category: body.category,
             price: Number(body.price || 0),
             stock: Number(body.stock || 0),
-            status: body.status
+            status: body.status,
+            image_url: body.image_url,
+            description: body.description
           });
           return sendJson(res, 200, { item });
         }
@@ -146,6 +153,51 @@ function startServer(port = 8000) {
           deleteCatalog(Number(body.id));
           return sendJson(res, 200, { success: true });
         }
+      }
+
+      if (url.startsWith('/api/upload')) {
+        const user = authenticate(req);
+        if (!user) return sendJson(res, 401, { error: 'Unauthorized' });
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+        const chunks = [];
+        req.on('data', chunk => chunks.push(chunk));
+        req.on('end', () => {
+          const buffer = Buffer.concat(chunks);
+          const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.png`;
+          const filePath = path.join(uploadsDir, filename);
+          fs.writeFileSync(filePath, buffer);
+          return sendJson(res, 201, { url: `/uploads/${filename}` });
+        });
+        return;
+      }
+
+      if (url.startsWith('/api/roles')) {
+        const user = authenticate(req);
+        if (!user || user.role !== 'admin') return sendJson(res, 403, { error: 'Forbidden' });
+        if (req.method === 'GET') return sendJson(res, 200, { roles: getTenantRoles(user.tenant_id) });
+        if (req.method === 'POST') {
+          const body = await readBody(req);
+          setTenantRole(user.tenant_id, Number(body.user_id), body.role);
+          return sendJson(res, 201, { roles: getTenantRoles(user.tenant_id) });
+        }
+      }
+
+      if (url.startsWith('/api/export')) {
+        const user = authenticate(req);
+        if (!user) return sendJson(res, 401, { error: 'Unauthorized' });
+        const exportData = listCatalogs(user.tenant_id);
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(exportData));
+      }
+
+      if (url.startsWith('/api/import')) {
+        const user = authenticate(req);
+        if (!user) return sendJson(res, 401, { error: 'Unauthorized' });
+        if (req.method !== 'POST') return sendJson(res, 405, { error: 'Method not allowed' });
+        const body = await readBody(req);
+        const items = Array.isArray(body) ? body : body.items || [];
+        items.forEach(item => createCatalog({ tenantId: user.tenant_id, name: item.name, sku: item.sku, category: item.category, price: Number(item.price || 0), stock: Number(item.stock || 0), status: item.status || 'active', imageUrl: item.image_url || null, description: item.description || null }));
+        return sendJson(res, 201, { imported: items.length });
       }
 
       const requestPath = url.split('?')[0];

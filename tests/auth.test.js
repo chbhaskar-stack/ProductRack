@@ -9,17 +9,18 @@ const { startServer } = require('../server');
   const baseUrl = `http://127.0.0.1:${address.port}`;
 
   try {
+    const uniqueEmail = `test-user-${Date.now()}@example.com`;
     const registerRes = await fetch(`${baseUrl}/api/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: 'Test User', email: 'test-user@example.com', password: 'secret123' })
+      body: JSON.stringify({ name: 'Test User', email: uniqueEmail, password: 'secret123' })
     });
     assert.equal(registerRes.status, 201);
 
     const loginRes = await fetch(`${baseUrl}/api/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'test-user@example.com', password: 'secret123' })
+      body: JSON.stringify({ email: uniqueEmail, password: 'secret123' })
     });
 
     assert.equal(loginRes.status, 200);
@@ -31,7 +32,7 @@ const { startServer } = require('../server');
     });
     assert.equal(meRes.status, 200);
     const meData = await meRes.json();
-    assert.equal(meData.user.email, 'test-user@example.com');
+    assert.equal(meData.user.email, uniqueEmail);
 
     const catalogRes = await fetch(`${baseUrl}/api/catalogs`, {
       method: 'POST',
