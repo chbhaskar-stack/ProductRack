@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product Catalogue Manager - Cloud Edition</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    min-height: 100vh;
+    color: #1a1a2e;
+  }
+  .catalogue-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+  .header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
+  .header h1 { font-size: 32px; font-weight: 800; color: #16213e; margin: 0 0 8px 0; letter-spacing: -1px; }
+  .header p { color: #666; margin: 0; font-size: 15px; }
+  .cloud-status { display: inline-flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; border: 1.5px solid #e0e0e0; }
+  .cloud-status.connected { border-color: #2ecc71; color: #27ae60; }
+  .cloud-status.disconnected { border-color: #e94560; color: #e94560; }
+  .cloud-status .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .cloud-status.connected .dot { background: #2ecc71; }
+  .cloud-status.disconnected .dot { background: #e94560; }
+
+  .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .tab-btn { padding: 10px 20px; border: 2px solid #e0e0e0; background: #fff; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; color: #555; }
+  .tab-btn:hover { border-color: #0f3460; color: #0f3460; transform: translateY(-1px); }
+  .tab-btn.active { background: #0f3460; color: #fff; border-color: #0f3460; box-shadow: 0 4px 12px rgba(15, 52, 96, 0.2); }
+
+  .controls { display: flex; gap: 12px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
+  .search-box { flex: 1; min-width: 220px; padding: 12px 18px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; outline: none; transition: all 0.2s; background: #fff; }
+  .search-box:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1); }
+  .add-btn { padding: 12px 24px; background: #e94560; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px; box-shadow: 0 4px 12px rgba(233, 69, 96, 0.25); }
+  .add-btn:hover { background: #d13650; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(233, 69, 96, 0.35); }
+  .export-btn { padding: 12px 20px; background: #16213e; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; white-space: nowrap; }
+  .export-btn:hover { background: #0f3460; transform: translateY(-2px); }
+  .sync-btn { padding: 12px 20px; background: #27ae60; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; white-space: nowrap; }
+  .sync-btn:hover { background: #219a52; transform: translateY(-2px); }
+  .sync-btn:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
+
+  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
+  .item-card { background: #fff; border: 2px solid #f0f0f0; border-radius: 18px; overflow: hidden; transition: all 0.25s; position: relative; }
+  .item-card:hover { border-color: #0f3460; box-shadow: 0 12px 32px rgba(15, 52, 96, 0.12); transform: translateY(-4px); }
+  .item-image { width: 100%; height: 220px; object-fit: cover; background: linear-gradient(135deg, #f0f4f8 0%, #e8ecf0 100%); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
+  .item-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+  .item-image:hover img { transform: scale(1.05); }
+  .item-image .img-placeholder { font-size: 14px; color: #999; text-align: center; padding: 20px; }
+  .item-image .img-placeholder .icon { font-size: 56px; display: block; margin-bottom: 8px; opacity: 0.5; }
+  .item-image .img-count { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.65); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); }
+  .item-image .cloud-badge { position: absolute; top: 12px; left: 12px; background: rgba(39, 174, 96, 0.85); color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; backdrop-filter: blur(4px); }
+  .item-image .cloud-badge.local { background: rgba(149, 165, 166, 0.85); }
+  .item-body { padding: 20px; }
+  .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .item-name { font-weight: 700; font-size: 17px; color: #16213e; margin: 0; line-height: 1.3; flex: 1; padding-right: 8px; }
+  .item-code { font-size: 11px; color: #888; background: #f5f5f5; padding: 3px 10px; border-radius: 6px; font-family: 'SF Mono', monospace; white-space: nowrap; letter-spacing: 0.5px; }
+  .item-details { display: flex; flex-direction: column; gap: 7px; }
+  .detail-row { display: flex; justify-content: space-between; font-size: 13px; align-items: center; }
+  .detail-label { color: #888; font-weight: 500; }
+  .detail-value { font-weight: 600; color: #333; }
+  .price-tag { color: #e94560; font-weight: 700; font-size: 16px; }
+  .cost-tag { color: #0f3460; font-weight: 600; font-size: 13px; }
+  .mrp-tag { color: #aaa; font-size: 12px; text-decoration: line-through; }
+  .color-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e0e0e0; vertical-align: middle; margin-right: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  .stock-badge { display: inline-block; padding: 4px 12px; border-radius: 14px; font-size: 11px; font-weight: 700; }
+  .stock-high { background: #d4edda; color: #155724; }
+  .stock-med { background: #fff3cd; color: #856404; }
+  .stock-low { background: #f8d7da; color: #721c24; }
+  .item-actions { display: flex; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
+  .action-btn { flex: 1; padding: 8px 0; border: 1.5px solid #e0e0e0; background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #555; }
+  .action-btn:hover { background: #f8f9fa; border-color: #0f3460; color: #0f3460; transform: translateY(-1px); }
+  .action-btn.delete:hover { border-color: #e94560; color: #e94560; background: #fff5f5; }
+
+  .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: none; justify-content: center; align-items: center; z-index: 100; padding: 20px; overflow-y: auto; backdrop-filter: blur(4px); }
+  .modal-overlay.show { display: flex; }
+  .modal { background: #fff; border-radius: 20px; padding: 32px; width: 100%; max-width: 540px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); max-height: 92vh; overflow-y: auto; animation: modalIn 0.3s ease; }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+  .modal h2 { margin: 0 0 24px 0; font-size: 22px; color: #16213e; font-weight: 700; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 700; color: #555; margin-bottom: 6px; }
+  .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 14px; outline: none; box-sizing: border-box; font-family: inherit; transition: all 0.2s; background: #fafafa; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: #0f3460; background: #fff; box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.08); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  .image-upload-area { border: 2px dashed #ccc; border-radius: 14px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
+  .image-upload-area:hover { border-color: #0f3460; background: #f0f4f8; }
+  .image-upload-area .upload-icon { font-size: 40px; margin-bottom: 10px; }
+  .image-upload-area p { margin: 0; color: #666; font-size: 13px; line-height: 1.5; }
+  .image-upload-area input[type="file"] { display: none; }
+  .image-preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+  .image-preview-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 2px solid #e0e0e0; background: #f5f5f5; }
+  .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
+  .image-preview-item .img-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); color: #fff; font-size: 10px; padding: 4px 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'SF Mono', monospace; }
+  .image-preview-item .remove-img { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(233, 69, 96, 0.9); color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.15s; }
+  .image-preview-item .remove-img:hover { background: #d13650; transform: scale(1.1); }
+  .image-preview-item .upload-progress { position: absolute; bottom: 0; left: 0; height: 4px; background: #27ae60; transition: width 0.3s; }
+  .image-preview-item .upload-progress.error { background: #e94560; }
+
+  .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+  .modal-actions button { flex: 1; padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+  .btn-save { background: #0f3460; color: #fff; box-shadow: 0 4px 12px rgba(15, 52, 96, 0.25); }
+  .btn-save:hover { background: #1a4a7a; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15, 52, 96, 0.35); }
+  .btn-cancel { background: #f0f0f0; color: #555; }
+  .btn-cancel:hover { background: #e0e0e0; transform: translateY(-2px); }
+
+  .empty-state { text-align: center; padding: 80px 20px; color: #888; }
+  .empty-state .big-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.3; }
+  .empty-state h3 { margin: 0 0 8px 0; font-size: 20px; color: #555; }
+  .empty-state p { margin: 0; font-size: 14px; }
+
+  .stats-bar { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+  .stat-pill { background: #fff; padding: 10px 18px; border-radius: 24px; font-size: 13px; font-weight: 600; color: #555; border: 1.5px solid #e8e8e8; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s; }
+  .stat-pill:hover { border-color: #0f3460; transform: translateY(-1px); }
+  .stat-pill strong { color: #0f3460; }
+
+  .lightbox-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.88); display: none; justify-content: center; align-items: center; z-index: 200; padding: 40px; backdrop-filter: blur(8px); }
+  .lightbox-overlay.show { display: flex; }
+  .lightbox-img { max-width: 88%; max-height: 82vh; border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); animation: imgIn 0.25s ease; }
+  @keyframes imgIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  .lightbox-close { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; background: none; border: none; line-height: 1; opacity: 0.8; transition: opacity 0.2s; }
+  .lightbox-close:hover { opacity: 1; }
+  .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); color: #fff; border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; backdrop-filter: blur(4px); }
+  .lightbox-nav:hover { background: rgba(255,255,255,0.3); transform: translateY(-50%) scale(1.08); }
+  .lightbox-prev { left: 24px; }
+  .lightbox-next { right: 24px; }
+  .lightbox-counter { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; font-weight: 600; }
+  .lightbox-filename { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 10px; font-family: 'SF Mono', monospace; letter-spacing: 0.5px; }
+
+  .toast { position: fixed; bottom: 24px; right: 24px; background: #16213e; color: #fff; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 300; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: #e94560; }
+  .toast.success { background: #27ae60; }
+
+  .setup-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); display: none; justify-content: center; align-items: center; z-index: 400; padding: 20px; backdrop-filter: blur(4px); }
+  .setup-overlay.show { display: flex; }
+  .setup-modal { background: #fff; border-radius: 20px; padding: 32px; width: 100%; max-width: 480px; box-shadow: 0 24px 80px rgba(0,0,0,0.25); }
+  .setup-modal h2 { margin: 0 0 20px 0; font-size: 22px; color: #16213e; font-weight: 700; }
+  .setup-modal p { color: #666; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+  .setup-modal .code-block { background: #f5f5f5; padding: 16px; border-radius: 10px; font-family: 'SF Mono', monospace; font-size: 12px; color: #333; overflow-x: auto; margin-bottom: 20px; border: 1px solid #e0e0e0; }
+  .setup-modal .btn-primary { width: 100%; padding: 14px; background: #0f3460; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 14px; transition: all 0.2s; }
+  .setup-modal .btn-primary:hover { background: #1a4a7a; }
+
+  @media (max-width: 768px) {
+    .items-grid { grid-template-columns: 1fr; }
+    .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    .header h1 { font-size: 24px; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .search-box { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="catalogue-container">
+  <div class="header">
+    <h1>📦 Product Catalogue Manager</h1>
+    <p>Apparels · Fabrics · Accessories · Madeups — Cloud Storage Edition</p>
+    <div class="cloud-status disconnected" id="cloudStatus">
+      <span class="dot"></span>
+      <span id="cloudStatusText">Cloud Storage: Not Configured</span>
+    </div>
+  </div>
+
+  <div class="tabs" id="categoryTabs"></div>
+
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="controls">
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by name, code, color, or material...">
+    <button class="add-btn" id="addBtn">+ Add Product</button>
+    <button class="sync-btn" id="syncBtn" onclick="showSetupModal()">⚙️ Setup Cloud</button>
+    <button class="export-btn" id="exportBtn">📥 Export CSV</button>
+  </div>
+
+  <div class="items-grid" id="itemsGrid"></div>
+
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="big-icon">📦</div>
+    <h3>No items found</h3>
+    <p>Try adjusting your search or add a new product.</p>
+  </div>
+</div>
+
+<!-- Setup Modal -->
+<div class="setup-overlay" id="setupOverlay">
+  <div class="setup-modal">
+    <h2>☁️ Cloud Storage Setup</h2>
+    <p>Choose your cloud storage provider. The app supports <strong>Supabase</strong> (recommended) or any S3-compatible service.</p>
+
+    <h3 style="font-size:16px;color:#16213e;margin:20px 0 10px;">Option 1: Supabase (Free Tier)</h3>
+    <p>1. Go to <a href="https://supabase.com" target="_blank">supabase.com</a> and create a free account<br>
+    2. Create a new project<br>
+    3. Go to Project Settings → API → Copy your <strong>URL</strong> and <strong>anon/public</strong> key<br>
+    4. Go to Storage → Create a bucket named <strong>catalogue-images</strong> (set to public)<br>
+    5. Paste them below:</p>
+
+    <div class="form-group">
+      <label>Supabase URL</label>
+      <input type="text" id="sbUrl" placeholder="https://yourproject.supabase.co">
+    </div>
+    <div class="form-group">
+      <label>Supabase Anon Key</label>
+      <input type="text" id="sbKey" placeholder="eyJhbGciOiJIUzI1NiIs...">
+    </div>
+    <div class="form-group">
+      <label>Storage Bucket Name</label>
+      <input type="text" id="sbBucket" value="catalogue-images" placeholder="catalogue-images">
+    </div>
+
+    <button class="btn-primary" onclick="saveCloudConfig()">💾 Save & Connect</button>
+    <button class="btn-cancel" style="width:100%;margin-top:10px;padding:12px;background:#f0f0f0;border:none;border-radius:10px;font-weight:600;cursor:pointer;" onclick="closeSetupModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Add Product</h2>
+    <form id="productForm">
+      <div class="form-group">
+        <label>Product Name</label>
+        <input type="text" id="pName" required placeholder="e.g., Cotton T-Shirt">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="pCategory">
+            <option value="Apparels">Apparels</option>
+            <option value="Fabrics">Fabrics</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Madeups">Madeups</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Code / SKU</label>
+          <input type="text" id="pCode" required placeholder="e.g., YVSM001">
+        </div>
+      </div>
+      <div class="form-row-3">
+        <div class="form-group">
+          <label>Cost Price ($)</label>
+          <input type="number" id="pCostPrice" step="0.01" min="0" required placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>Selling Price ($)</label>
+          <input type="number" id="pPrice" step="0.01" min="0" required placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label>MRP ($)</label>
+          <input type="number" id="pMRP" step="0.01" min="0" required placeholder="0.00">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Color</label>
+          <input type="text" id="pColor" placeholder="e.g., Navy Blue, Red">
+        </div>
+        <div class="form-group">
+          <label>Stock Qty</label>
+          <input type="number" id="pStock" min="0" required placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Material / Composition</label>
+        <input type="text" id="pMaterial" placeholder="e.g., 100% Cotton">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea id="pDesc" placeholder="Brief product description..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Product Images (uploads to cloud when configured)</label>
+        <div class="image-upload-area" id="imageUploadArea">
+          <div class="upload-icon">📷</div>
+          <p>Click or drag images here<br><small>Main: SKU | Others: SKU_A, SKU_B, SKU_C...</small></p>
+          <input type="file" id="pImages" accept="image/*" multiple>
+        </div>
+        <div class="image-preview-grid" id="imagePreviewGrid"></div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn-save">Save Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox-overlay" id="lightboxOverlay">
+  <button class="lightbox-close" id="lightboxClose">&times;</button>
+  <div class="lightbox-filename" id="lightboxFilename"></div>
+  <button class="lightbox-nav lightbox-prev" id="lightboxPrev">&#10094;</button>
+  <img class="lightbox-img" id="lightboxImg" src="" alt="">
+  <button class="lightbox-nav lightbox-next" id="lightboxNext">&#10095;</button>
+  <div class="lightbox-counter" id="lightboxCounter"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===================== CONFIGURATION =====================
+const APP_VERSION = 'cloud-v1';
+const STORAGE_KEY = 'catalogueItemsCloud_v1';
+const CLOUD_CONFIG_KEY = 'catalogueCloudConfig';
+
+const categories = ['Apparels', 'Fabrics', 'Accessories', 'Madeups'];
+const categoryIcons = { 'Apparels': '👕', 'Fabrics': '🧵', 'Accessories': '👜', 'Madeups': '🛏️' };
+
+const colorMap = {
+  'red': '#e74c3c', 'crimson': '#dc143c', 'maroon': '#800000',
+  'blue': '#3498db', 'navy': '#001f3f', 'sky': '#87ceeb', 'royal': '#4169e1',
+  'green': '#2ecc71', 'lime': '#32cd32', 'forest': '#228b22', 'olive': '#808000',
+  'yellow': '#f1c40f', 'gold': '#ffd700', 'orange': '#f39c12', 'amber': '#ffbf00',
+  'purple': '#9b59b6', 'violet': '#8a2be2', 'pink': '#ff69b4', 'magenta': '#ff00ff',
+  'black': '#1a1a1a', 'white': '#f8f9fa', 'gray': '#7f8c8d', 'grey': '#7f8c8d',
+  'silver': '#c0c0c0', 'brown': '#8b4513', 'beige': '#f5f5dc', 'cream': '#fffdd0',
+  'navy blue': '#001f3f', 'royal blue': '#4169e1', 'sky blue': '#87ceeb',
+  'dark blue': '#00008b', 'light blue': '#add8e6',
+  'dark green': '#006400', 'light green': '#90ee90',
+  'dark red': '#8b0000', 'light pink': '#ffb6c1',
+  'dark gray': '#555555', 'light gray': '#d3d3d3',
+  'charcoal': '#36454f', 'teal': '#008080', 'coral': '#ff7f50',
+  'turquoise': '#40e0d0', 'indigo': '#4b0082', 'peach': '#ffdab9',
+  'lavender': '#e6e6fa', 'mint': '#98ff98', 'salmon': '#fa8072',
+  'khaki': '#f0e68c', 'plum': '#dda0dd', 'orchid': '#da70d6',
+  'slate': '#708090', 'rust': '#b7410e', 'mustard': '#ffdb58',
+  'burgundy': '#800020', 'emerald': '#50c878', 'sapphire': '#0f52ba',
+  'ruby': '#e0115f', 'pearl': '#eae0c8', 'ivory': '#fffff0',
+  'chocolate': '#d2691e', 'tan': '#d2b48c', 'wheat': '#f5deb3'
+};
+
+// ===================== STATE =====================
+let items = [];
+let currentCategory = 'All';
+let editingId = null;
+let tempImages = []; // { file, filename, dataUrl, status: 'pending'|'uploading'|'done'|'error', url }
+let lightboxImages = [];
+let lightboxIndex = 0;
+let cloudConfig = null;
+
+// ===================== CLOUD STORAGE API =====================
+// Supabase Storage REST API wrapper (no SDK needed)
+const CloudStorage = {
+  isConfigured() { return !!cloudConfig; },
+
+  async uploadImage(file, filename) {
+    if (!this.isConfigured()) throw new Error('Cloud not configured');
+    const { url, key, bucket } = cloudConfig;
+    const path = `${filename}`;
+
+    // Upload via Supabase Storage REST API
+    const uploadUrl = `${url}/storage/v1/object/${bucket}/${path}`;
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${key}`,
+        'Content-Type': file.type || 'image/jpeg',
+        'x-upsert': 'true'
+      },
+      body: file
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || `Upload failed: ${response.status}`);
+    }
+
+    // Return public URL
+    return `${url}/storage/v1/object/public/${bucket}/${path}`;
+  },
+
+  async deleteImage(filename) {
+    if (!this.isConfigured()) return;
+    const { url, key, bucket } = cloudConfig;
+    const deleteUrl = `${url}/storage/v1/object/${bucket}/${filename}`;
+    await fetch(deleteUrl, {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${key}` }
+    });
+  },
+
+  getPublicUrl(filename) {
+    if (!this.isConfigured()) return null;
+    const { url, bucket } = cloudConfig;
+    return `${url}/storage/v1/object/public/${bucket}/${filename}`;
+  }
+};
+
+// ===================== DATA PERSISTENCE =====================
+function loadItems() {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      items = JSON.parse(saved);
+    } else {
+      // Demo data
+      items = [
+        { id: 1, name: "Men's Cotton Polo Shirt", category: "Apparels", code: "YVSM001", costPrice: 18.50, price: 29.99, mrp: 39.99, color: "Navy Blue", stock: 145, material: "100% Cotton", desc: "Classic fit polo with breathable fabric", images: [], cloudSynced: false },
+        { id: 2, name: "Women's Linen Blazer", category: "Apparels", code: "YVSM002", costPrice: 55.00, price: 89.50, mrp: 119.00, color: "Beige", stock: 32, material: "Linen Blend", desc: "Lightweight summer blazer", images: [], cloudSynced: false },
+        { id: 3, name: "Organic Cotton Jersey", category: "Fabrics", code: "YVSM003", costPrice: 7.50, price: 12.99, mrp: 16.99, color: "White", stock: 500, material: "Organic Cotton", desc: "Soft jersey knit, 180 GSM", images: [], cloudSynced: false },
+        { id: 4, name: "Silk Satin Fabric", category: "Fabrics", code: "YVSM004", costPrice: 28.00, price: 45.00, mrp: 59.00, color: "Champagne", stock: 120, material: "100% Mulberry Silk", desc: "Luxurious satin for evening wear", images: [], cloudSynced: false },
+        { id: 5, name: "Leather Handbag", category: "Accessories", code: "YVSM005", costPrice: 75.00, price: 120.00, mrp: 159.00, color: "Brown", stock: 18, material: "Genuine Leather", desc: "Structured tote with gold hardware", images: [], cloudSynced: false },
+        { id: 6, name: "Cotton Scarf", category: "Accessories", code: "YVSM006", costPrice: 14.00, price: 24.99, mrp: 34.99, color: "Red", stock: 85, material: "Cotton Voile", desc: "Lightweight printed scarf", images: [], cloudSynced: false },
+        { id: 7, name: "Quilted Bedspread Set", category: "Madeups", code: "YVSM007", costPrice: 95.00, price: 149.00, mrp: 199.00, color: "Royal Blue", stock: 22, material: "Cotton & Polyester", desc: "King size with 2 pillow covers", images: [], cloudSynced: false },
+        { id: 8, name: "Embroidered Cushion Cover", category: "Madeups", code: "YVSM008", costPrice: 10.00, price: 18.50, mrp: 25.00, color: "Emerald Green", stock: 60, material: "Cotton Canvas", desc: "Hand-embroidered floral design", images: [], cloudSynced: false }
+      ];
+      saveItems();
+    }
+  } catch (e) {
+    console.error('Failed to load items:', e);
+    items = [];
+  }
+}
+
+function saveItems() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+}
+
+function loadCloudConfig() {
+  try {
+    const saved = localStorage.getItem(CLOUD_CONFIG_KEY);
+    if (saved) {
+      cloudConfig = JSON.parse(saved);
+      updateCloudStatus(true);
+    }
+  } catch (e) {
+    console.error('Failed to load cloud config:', e);
+  }
+}
+
+function saveCloudConfig() {
+  localStorage.setItem(CLOUD_CONFIG_KEY, JSON.stringify(cloudConfig));
+}
+
+// ===================== UI HELPERS =====================
+function showToast(msg, type = 'default') {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.className = 'toast show ' + type;
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function updateCloudStatus(connected) {
+  const status = document.getElementById('cloudStatus');
+  const text = document.getElementById('cloudStatusText');
+  if (connected && cloudConfig) {
+    status.className = 'cloud-status connected';
+    text.textContent = `Cloud: ${cloudConfig.bucket} @ ${cloudConfig.url.split('//')[1].split('.')[0]}.supabase.co`;
+    document.getElementById('syncBtn').textContent = '☁️ Sync to Cloud';
+  } else {
+    status.className = 'cloud-status disconnected';
+    text.textContent = 'Cloud Storage: Not Configured';
+    document.getElementById('syncBtn').textContent = '⚙️ Setup Cloud';
+  }
+}
+
+function getColorHex(colorStr) {
+  if (!colorStr) return null;
+  const lower = colorStr.toLowerCase().trim();
+  if (colorMap[lower]) return colorMap[lower];
+  for (const [name, hex] of Object.entries(colorMap)) {
+    if (lower.includes(name)) return hex;
+  }
+  let hash = 0;
+  for (let i = 0; i < lower.length; i++) {
+    hash = lower.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const r = (hash >> 0) & 0xFF;
+  const g = (hash >> 8) & 0xFF;
+  const b = (hash >> 16) & 0xFF;
+  return `rgb(${r},${g},${b})`;
+}
+
+function generateImageNames(sku, count) {
+  const names = [];
+  if (count === 1) { names.push(sku); }
+  else if (count === 2) { names.push(sku); names.push(sku + '_A'); }
+  else {
+    names.push(sku);
+    const suffixes = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    for (let i = 1; i < count; i++) { names.push(sku + '_' + suffixes[i - 1]); }
+  }
+  return names;
+}
+
+// ===================== RENDERING =====================
+function renderTabs() {
+  const tabsContainer = document.getElementById('categoryTabs');
+  tabsContainer.innerHTML = `
+    <button class="tab-btn ${currentCategory === 'All' ? 'active' : ''}" data-cat="All">All (${items.length})</button>
+    ${categories.map(cat => {
+      const count = items.filter(i => i.category === cat).length;
+      return `<button class="tab-btn ${currentCategory === cat ? 'active' : ''}" data-cat="${cat}">${categoryIcons[cat]} ${cat} (${count})</button>`;
+    }).join('')}
+  `;
+  tabsContainer.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentCategory = btn.dataset.cat;
+      renderTabs();
+      renderItems();
+    });
+  });
+}
+
+function renderStats() {
+  const statsBar = document.getElementById('statsBar');
+  const totalValue = items.reduce((sum, i) => sum + (i.price * i.stock), 0);
+  const totalCost = items.reduce((sum, i) => sum + ((i.costPrice || 0) * i.stock), 0);
+  const lowStock = items.filter(i => i.stock < 20).length;
+  const totalImages = items.reduce((sum, i) => sum + (i.images?.length || 0), 0);
+  const cloudItems = items.filter(i => i.cloudSynced).length;
+  statsBar.innerHTML = `
+    <div class="stat-pill">📦 Items: <strong>${items.length}</strong></div>
+    <div class="stat-pill">💰 Value: <strong>$${totalValue.toLocaleString(undefined, {maximumFractionDigits: 0})}</strong></div>
+    <div class="stat-pill">📊 Cost: <strong>$${totalCost.toLocaleString(undefined, {maximumFractionDigits: 0})}</strong></div>
+    <div class="stat-pill">⚠️ Low Stock: <strong>${lowStock}</strong></div>
+    <div class="stat-pill">🖼️ Images: <strong>${totalImages}</strong></div>
+    ${cloudConfig ? `<div class="stat-pill">☁️ Cloud: <strong>${cloudItems}/${items.length}</strong></div>` : ''}
+  `;
+}
+
+function getStockClass(stock) {
+  if (stock >= 50) return 'stock-high';
+  if (stock >= 20) return 'stock-med';
+  return 'stock-low';
+}
+
+function renderImagePreviewGrid() {
+  const grid = document.getElementById('imagePreviewGrid');
+  if (tempImages.length === 0) { grid.innerHTML = ''; return; }
+  grid.innerHTML = tempImages.map((img, idx) => `
+    <div class="image-preview-item">
+      <img src="${img.dataUrl}" alt="Preview">
+      <div class="img-name">${img.filename}</div>
+      ${img.status === 'uploading' ? `<div class="upload-progress" style="width:${img.progress || 0}%"></div>` : ''}
+      ${img.status === 'error' ? `<div class="upload-progress error" style="width:100%"></div>` : ''}
+      <button type="button" class="remove-img" data-idx="${idx}">&times;</button>
+    </div>
+  `).join('');
+
+  grid.querySelectorAll('.remove-img').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt(btn.dataset.idx);
+      tempImages.splice(idx, 1);
+      const sku = document.getElementById('pCode').value.trim();
+      if (sku) {
+        const names = generateImageNames(sku, tempImages.length);
+        tempImages.forEach((img, i) => { img.filename = names[i]; });
+      }
+      renderImagePreviewGrid();
+    });
+  });
+}
+
+function renderItems() {
+  const search = document.getElementById('searchBox').value.toLowerCase();
+  const grid = document.getElementById('itemsGrid');
+  const empty = document.getElementById('emptyState');
+
+  let filtered = items.filter(item => {
+    const matchesCat = currentCategory === 'All' || item.category === currentCategory;
+    const matchesSearch = !search || 
+      item.name.toLowerCase().includes(search) || 
+      item.code.toLowerCase().includes(search) ||
+      (item.color && item.color.toLowerCase().includes(search)) ||
+      (item.material && item.material.toLowerCase().includes(search)) ||
+      (item.desc && item.desc.toLowerCase().includes(search));
+    return matchesCat && matchesSearch;
+  });
+
+  if (filtered.length === 0) {
+    grid.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  grid.style.display = 'grid';
+  empty.style.display = 'none';
+
+  grid.innerHTML = filtered.map(item => {
+    const imgs = item.images || [];
+    const hasImages = imgs.length > 0;
+    const firstImg = hasImages ? (imgs[0].cloudUrl || imgs[0].dataUrl || imgs[0]) : null;
+    const colorHex = getColorHex(item.color);
+    const marginPercent = item.mrp > 0 ? (((item.mrp - item.costPrice) / item.mrp) * 100).toFixed(1) : '0';
+    const isCloud = item.cloudSynced && cloudConfig;
+
+    return `
+    <div class="item-card" data-id="${item.id}">
+      <div class="item-image" ${hasImages ? `onclick="openLightbox(${item.id}, 0)"` : ''}>
+        ${hasImages 
+          ? `<img src="${firstImg}" alt="${item.name}" loading="lazy">` 
+          : `<div class="img-placeholder"><span class="icon">${categoryIcons[item.category]}</span>No image uploaded</div>`
+        }
+        ${imgs.length > 1 ? `<span class="img-count">+${imgs.length - 1} more</span>` : ''}
+        ${cloudConfig ? `<span class="cloud-badge ${isCloud ? '' : 'local'}">${isCloud ? '☁️ Cloud' : '📱 Local'}</span>` : ''}
+      </div>
+      <div class="item-body">
+        <div class="item-header">
+          <h3 class="item-name">${item.name}</h3>
+          <span class="item-code">${item.code}</span>
+        </div>
+        <div class="item-details">
+          <div class="detail-row"><span class="detail-label">Category</span><span class="detail-value">${item.category}</span></div>
+          ${item.color ? `<div class="detail-row"><span class="detail-label">Color</span><span class="detail-value">${colorHex ? `<span class="color-dot" style="background:${colorHex}"></span>` : ''}${item.color}</span></div>` : ''}
+          <div class="detail-row"><span class="detail-label">Material</span><span class="detail-value">${item.material || '-'}</span></div>
+          <div class="detail-row"><span class="detail-label">Cost</span><span class="detail-value cost-tag">$${(item.costPrice || 0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Price</span><span class="detail-value price-tag">$${item.price.toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">MRP</span><span class="detail-value mrp-tag">$${(item.mrp || 0).toFixed(2)}</span></div>
+          <div class="detail-row"><span class="detail-label">Margin</span><span class="detail-value" style="color:#0f3460;font-size:12px;font-weight:700;">${marginPercent}%</span></div>
+          <div class="detail-row"><span class="detail-label">Stock</span><span class="stock-badge ${getStockClass(item.stock)}">${item.stock} units</span></div>
+          ${item.desc ? `<div class="detail-row"><span class="detail-label">Note</span><span class="detail-value" style="font-weight:400;color:#666;">${item.desc}</span></div>` : ''}
+        </div>
+        <div class="item-actions">
+          <button class="action-btn" onclick="editItem(${item.id})">✏️ Edit</button>
+          <button class="action-btn delete" onclick="deleteItem(${item.id})">🗑️ Delete</button>
+        </div>
+      </div>
+    </div>
+  `}).join('');
+}
+
+// ===================== LIGHTBOX =====================
+function openLightbox(itemId, imgIndex) {
+  const item = items.find(i => i.id === itemId);
+  if (!item || !item.images || item.images.length === 0) return;
+  lightboxImages = item.images.map(img => img.cloudUrl || img.dataUrl || img);
+  lightboxIndex = imgIndex;
+  updateLightbox();
+  document.getElementById('lightboxOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function updateLightbox() {
+  document.getElementById('lightboxImg').src = lightboxImages[lightboxIndex];
+  document.getElementById('lightboxCounter').textContent = `${lightboxIndex + 1} / ${lightboxImages.length}`;
+  const item = items.find(i => i.images && i.images[lightboxIndex]);
+  document.getElementById('lightboxFilename').textContent = item ? (item.images[lightboxIndex].filename || '') : '';
+}
+
+function closeLightbox() {
+  document.getElementById('lightboxOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  lightboxImages = [];
+  lightboxIndex = 0;
+}
+
+// ===================== MODAL =====================
+function openModal(editItem = null) {
+  const modal = document.getElementById('modalOverlay');
+  const title = document.getElementById('modalTitle');
+  const form = document.getElementById('productForm');
+
+  if (editItem) {
+    title.textContent = 'Edit Product';
+    document.getElementById('pName').value = editItem.name;
+    document.getElementById('pCategory').value = editItem.category;
+    document.getElementById('pCode').value = editItem.code;
+    document.getElementById('pCostPrice').value = editItem.costPrice || '';
+    document.getElementById('pPrice').value = editItem.price;
+    document.getElementById('pMRP').value = editItem.mrp || '';
+    document.getElementById('pColor').value = editItem.color || '';
+    document.getElementById('pStock').value = editItem.stock;
+    document.getElementById('pMaterial').value = editItem.material || '';
+    document.getElementById('pDesc').value = editItem.desc || '';
+    const sku = editItem.code;
+    const names = generateImageNames(sku, editItem.images?.length || 0);
+    tempImages = editItem.images ? editItem.images.map((img, i) => ({
+      file: null,
+      dataUrl: img.cloudUrl || img.dataUrl || img,
+      filename: img.filename || names[i] || sku,
+      status: 'done',
+      url: img.cloudUrl || null
+    })) : [];
+    editingId = editItem.id;
+  } else {
+    title.textContent = 'Add Product';
+    form.reset();
+    document.getElementById('pCategory').value = currentCategory === 'All' ? 'Apparels' : currentCategory;
+    tempImages = [];
+    editingId = null;
+  }
+
+  renderImagePreviewGrid();
+  modal.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+  tempImages = [];
+  editingId = null;
+}
+
+// ===================== SETUP MODAL =====================
+function showSetupModal() {
+  if (cloudConfig) {
+    // If already configured, offer sync or disconnect
+    if (confirm('Cloud is already configured. Do you want to disconnect?')) {
+      cloudConfig = null;
+      localStorage.removeItem(CLOUD_CONFIG_KEY);
+      updateCloudStatus(false);
+      showToast('Cloud storage disconnected', 'success');
+      renderStats();
+      renderItems();
+    }
+    return;
+  }
+  document.getElementById('setupOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeSetupModal() {
+  document.getElementById('setupOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function saveCloudConfig() {
+  const url = document.getElementById('sbUrl').value.trim();
+  const key = document.getElementById('sbKey').value.trim();
+  const bucket = document.getElementById('sbBucket').value.trim() || 'catalogue-images';
+
+  if (!url || !key) {
+    showToast('Please enter both URL and API key', 'error');
+    return;
+  }
+
+  cloudConfig = { url, key, bucket, provider: 'supabase' };
+  saveCloudConfig();
+  closeSetupModal();
+  updateCloudStatus(true);
+  showToast('Cloud storage connected!', 'success');
+  renderStats();
+
+  // Test connection
+  testCloudConnection();
+}
+
+async function testCloudConnection() {
+  try {
+    // Try to list buckets to verify connection
+    const { url, key } = cloudConfig;
+    const response = await fetch(`${url}/storage/v1/bucket`, {
+      headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': 'application/json' }
+    });
+    if (response.ok) {
+      showToast('Cloud connection verified!', 'success');
+    } else {
+      showToast('Connection warning: Check your API key permissions', 'error');
+    }
+  } catch (e) {
+    showToast('Could not verify connection. Check URL and internet.', 'error');
+  }
+}
+
+// ===================== CRUD OPERATIONS =====================
+window.editItem = function(id) {
+  const item = items.find(i => i.id === id);
+  if (item) openModal(item);
+};
+
+window.deleteItem = function(id) {
+  if (!confirm('Are you sure you want to delete this product?')) return;
+
+  const item = items.find(i => i.id === id);
+  if (item && item.images && cloudConfig) {
+    // Delete cloud images asynchronously
+    item.images.forEach(img => {
+      if (img.filename) CloudStorage.deleteImage(img.filename).catch(() => {});
+    });
+  }
+
+  items = items.filter(i => i.id !== id);
+  saveItems();
+  renderTabs();
+  renderStats();
+  renderItems();
+  showToast('Product deleted', 'success');
+};
+
+// ===================== IMAGE HANDLING =====================
+const uploadArea = document.getElementById('imageUploadArea');
+const fileInput = document.getElementById('pImages');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#0f3460'; uploadArea.style.background = '#f0f4f8'; });
+uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = '#ccc'; uploadArea.style.background = '#fafafa'; });
+uploadArea.addEventListener('drop', (e) => { e.preventDefault(); uploadArea.style.borderColor = '#ccc'; uploadArea.style.background = '#fafafa'; handleFiles(e.dataTransfer.files); });
+fileInput.addEventListener('change', (e) => { handleFiles(e.target.files); fileInput.value = ''; });
+
+function handleFiles(files) {
+  const sku = document.getElementById('pCode').value.trim();
+  const startIdx = tempImages.length;
+  const newFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+  const totalAfter = startIdx + newFiles.length;
+
+  if (totalAfter > 6) { alert('Maximum 6 images allowed per product.'); return; }
+
+  newFiles.forEach((file, idx) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      let filename;
+      if (sku) {
+        if (startIdx === 0 && idx === 0) { filename = sku; }
+        else {
+          const suffix = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+          const suffixIdx = startIdx + idx - (startIdx === 0 ? 1 : 0);
+          filename = sku + '_' + suffix[suffixIdx >= 0 ? suffixIdx : 0];
+        }
+      } else { filename = file.name; }
+
+      tempImages.push({
+        file: file,
+        dataUrl: e.target.result,
+        filename: filename,
+        status: 'pending',
+        progress: 0,
+        url: null
+      });
+      renderImagePreviewGrid();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+document.getElementById('pCode').addEventListener('input', () => {
+  const sku = document.getElementById('pCode').value.trim();
+  if (sku && tempImages.length > 0) {
+    const names = generateImageNames(sku, tempImages.length);
+    tempImages.forEach((img, i) => { img.filename = names[i]; });
+    renderImagePreviewGrid();
+  }
+});
+
+// ===================== FORM SUBMISSION =====================
+document.getElementById('productForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const sku = document.getElementById('pCode').value.trim();
+  const submitBtn = e.target.querySelector('.btn-save');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Saving...';
+
+  // Upload images to cloud if configured
+  const uploadedImages = [];
+  if (cloudConfig) {
+    for (let i = 0; i < tempImages.length; i++) {
+      const img = tempImages[i];
+      if (img.status === 'done' && img.url) {
+        uploadedImages.push({ filename: img.filename, cloudUrl: img.url, dataUrl: img.dataUrl });
+        continue;
+      }
+      if (!img.file) continue;
+
+      img.status = 'uploading';
+      img.progress = 30;
+      renderImagePreviewGrid();
+
+      try {
+        const cloudUrl = await CloudStorage.uploadImage(img.file, img.filename);
+        img.status = 'done';
+        img.progress = 100;
+        img.url = cloudUrl;
+        uploadedImages.push({ filename: img.filename, cloudUrl: cloudUrl, dataUrl: img.dataUrl });
+        showToast(`Uploaded ${img.filename} to cloud`, 'success');
+      } catch (err) {
+        img.status = 'error';
+        img.progress = 100;
+        showToast(`Failed to upload ${img.filename}: ${err.message}`, 'error');
+        // Fall back to local storage
+        uploadedImages.push({ filename: img.filename, dataUrl: img.dataUrl });
+      }
+      renderImagePreviewGrid();
+    }
+  } else {
+    // Local only - store base64
+    tempImages.forEach(img => {
+      uploadedImages.push({ filename: img.filename, dataUrl: img.dataUrl });
+    });
+  }
+
+  const newItem = {
+    id: editingId || Date.now(),
+    name: document.getElementById('pName').value,
+    category: document.getElementById('pCategory').value,
+    code: sku,
+    costPrice: parseFloat(document.getElementById('pCostPrice').value) || 0,
+    price: parseFloat(document.getElementById('pPrice').value) || 0,
+    mrp: parseFloat(document.getElementById('pMRP').value) || 0,
+    color: document.getElementById('pColor').value,
+    stock: parseInt(document.getElementById('pStock').value) || 0,
+    material: document.getElementById('pMaterial').value,
+    desc: document.getElementById('pDesc').value,
+    images: uploadedImages,
+    cloudSynced: cloudConfig && uploadedImages.some(img => img.cloudUrl) ? true : false
+  };
+
+  if (editingId) {
+    const idx = items.findIndex(i => i.id === editingId);
+    if (idx !== -1) items[idx] = newItem;
+    showToast('Product updated!', 'success');
+  } else {
+    items.push(newItem);
+    showToast('Product added!', 'success');
+  }
+
+  saveItems();
+  closeModal();
+  renderTabs();
+  renderStats();
+  renderItems();
+
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Save Product';
+});
+
+// ===================== EXPORT =====================
+document.getElementById('exportBtn').addEventListener('click', () => {
+  const headers = ['ID', 'Name', 'Category', 'SKU', 'Cost Price', 'Selling Price', 'MRP', 'Color', 'Stock', 'Material', 'Description', 'Image Count', 'Cloud Synced'];
+  let csv = headers.join(',') + '\n';
+  items.forEach(item => {
+    const row = [
+      item.id,
+      `"${(item.name || '').replace(/"/g, '""')}"`,
+      item.category,
+      item.code,
+      item.costPrice || 0,
+      item.price,
+      item.mrp || 0,
+      `"${(item.color || '').replace(/"/g, '""')}"`,
+      item.stock,
+      `"${(item.material || '').replace(/"/g, '""')}"`,
+      `"${(item.desc || '').replace(/"/g, '""')}"`,
+      item.images?.length || 0,
+      item.cloudSynced ? 'Yes' : 'No'
+    ];
+    csv += row.join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'product_catalogue_' + new Date().toISOString().split('T')[0] + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('CSV exported!', 'success');
+});
+
+// ===================== EVENT LISTENERS =====================
+document.getElementById('addBtn').addEventListener('click', () => openModal());
+document.getElementById('cancelBtn').addEventListener('click', closeModal);
+document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('modalOverlay')) closeModal(); });
+document.getElementById('searchBox').addEventListener('input', renderItems);
+
+document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
+document.getElementById('lightboxOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('lightboxOverlay')) closeLightbox(); });
+document.getElementById('lightboxPrev').addEventListener('click', (e) => { e.stopPropagation(); lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length; updateLightbox(); });
+document.getElementById('lightboxNext').addEventListener('click', (e) => { e.stopPropagation(); lightboxIndex = (lightboxIndex + 1) % lightboxImages.length; updateLightbox(); });
+
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('lightboxOverlay').classList.contains('show')) {
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') { lightboxIndex = (lightboxIndex - 1 + lightboxImages.length) % lightboxImages.length; updateLightbox(); }
+    if (e.key === 'ArrowRight') { lightboxIndex = (lightboxIndex + 1) % lightboxImages.length; updateLightbox(); }
+  }
+  if (e.key === 'Escape' && document.getElementById('modalOverlay').classList.contains('show')) closeModal();
+});
+
+// ===================== INITIALIZATION =====================
+loadCloudConfig();
+loadItems();
+renderTabs();
+renderStats();
+renderItems();
+</script>
+
+</body>
+</html>
