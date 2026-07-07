@@ -1,26 +1,10 @@
 const STORAGE_KEYS = {
-  users: 'catalogue_saas_users',
-  currentUser: 'catalogue_saas_current_user'
+  currentUser: 'catalogue_saas_current_user',
+  token: 'catalogue_saas_token'
 };
 
-const DEFAULT_USERS = [
-  { id: 1, name: 'Admin User', email: 'admin@catalogue.com', password: 'admin123', role: 'admin', status: 'active' },
-  { id: 2, name: 'Demo User', email: 'user@catalogue.com', password: 'user123', role: 'user', status: 'active' }
-];
-
-let users = loadUsers();
+let users = [];
 let currentUser = loadCurrentUser();
-
-function loadUsers() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEYS.users);
-    return saved ? JSON.parse(saved) : DEFAULT_USERS;
-  } catch { return DEFAULT_USERS; }
-}
-
-function saveUsers() {
-  localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-}
 
 function loadCurrentUser() {
   try {
@@ -35,6 +19,15 @@ function saveCurrentUser(user) {
 
 function clearCurrentUser() {
   localStorage.removeItem(STORAGE_KEYS.currentUser);
+  localStorage.removeItem(STORAGE_KEYS.token);
+}
+
+function getStoredToken() {
+  return localStorage.getItem(STORAGE_KEYS.token);
+}
+
+function saveToken(token) {
+  localStorage.setItem(STORAGE_KEYS.token, token);
 }
 
 function showMessage(el, type, text) {
@@ -66,66 +59,200 @@ function logout() {
   window.location.href = 'login.html';
 }
 
-function handleLogin(e) {
+async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('email')?.value.trim();
   const password = document.getElementById('password')?.value;
   const msg = document.getElementById('authMessage');
-  const user = users.find(u => u.email === email && u.password === password);
-  if (!user) {
-    showMessage(msg, 'error', 'Invalid email or password.');
+  const response = await fetch('/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    showMessage(msg, 'error', data.error || 'Login failed.');
     return;
   }
-  if (user.status !== 'active') {
-    showMessage(msg, 'error', 'Your account is suspended.');
-    return;
-  }
-  currentUser = { id: user.id, name: user.name, email: user.email, role: user.role, status: user.status };
+  currentUser = data.user;
   saveCurrentUser(currentUser);
+  saveToken(data.token);
   window.location.href = currentUser.role === 'admin' ? 'admin.html' : 'dashboard.html';
 }
 
-function handleRegister(e) {
+async function handleRegister(e) {
   e.preventDefault();
   const name = document.getElementById('name')?.value.trim();
   const email = document.getElementById('email')?.value.trim();
   const password = document.getElementById('password')?.value;
+  const tenantId = document.getElementById('tenantId')?.value.trim() || 'default';
   const msg = document.getElementById('authMessage');
   if (!name || !email || !password) {
     showMessage(msg, 'error', 'Please fill in all fields.');
     return;
   }
-  if (users.some(u => u.email === email)) {
-    showMessage(msg, 'error', 'An account with this email already exists.');
+  const response = await fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password, tenant_id: tenantId })
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    showMessage(msg, 'error', data.error || 'Registration failed.');
     return;
   }
-  const newUser = { id: Date.now(), name, email, password, role: 'user', status: 'active' };
-  users.push(newUser);
-  saveUsers();
   showMessage(msg, 'success', 'Account created. You can now log in.');
   document.getElementById('registerForm')?.reset();
 }
 
-function renderDashboard() {
-  const user = requireAuth(['user', 'admin']);
-  if (!user) return;
-  const welcome = document.getElementById('welcomeName');
-  if (welcome) welcome.textContent = `Welcome, ${user.name}`;
-  const totalUsers = document.getElementById('totalUsers');
-  if (totalUsers) totalUsers.textContent = users.length;
-  const activeUsers = document.getElementById('activeUsers');
-  if (activeUsers) activeUsers.textContent = users.filter(u => u.status === 'active').length;
-  const adminCount = document.getElementById('adminCount');
-  if (adminCount) adminCount.textContent = users.filter(u => u.role === 'admin').length;
+async function loadUserProfile() {
+  const token = getStoredToken();
+  if (!token) return null;
+  const response = await fetch('/api/me', { headers: { Authorization: `Bearer ${token}` } });
+  if (!response.ok) {
+    clearCurrentUser();
+    return null;
+  }
+  const data = await response.json();
+  currentUser = data.user;
+  saveCurrentUser(currentUser);
+  return currentUser;
 }
 
-function renderAdmin() {
-  const user = requireAuth(['admin']);
-  if (!user) return;
+let catalogItems = [];
+
+function resetCatalogForm() {
+  document.getElementById('catalogId').value = '';
+  document.getElementById('catalogName').value = '';
+  document.getElementById('catalogSku').value = '';
+  document.getElementById('catalogCategory').value = '';
+  document.getElementById('catalogPrice').value = '';
+  document.getElementById('catalogStock').value = '';
+  document.getElementById('catalogStatus').value = 'active';
+}
+
+function showCatalogForm() {
+  document.getElementById('catalogForm').style.display = 'grid';
+}
+
+function hideCatalogForm() {
+  document.getElementById('catalogForm').style.display = 'none';
+  resetCatalogForm();
+}
+
+function renderCatalogTable() {
+  const tbody = document.getElementById('catalogTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = catalogItems.map(item => `
+    <tr>
+      <td>${item.name}</td>
+      <td>${item.sku}</td>
+      <td>${item.category}</td>
+      <td>$${Number(item.price).toFixed(2)}</td>
+      <td>${item.stock}</td>
+      <td>${item.status}</td>
+      <td>
+        <button class="btn btn-secondary" data-action="edit-catalog" data-id="${item.id}">Edit</button>
+        <button class="btn btn-danger" data-action="delete-catalog" data-id="${item.id}">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function loadCatalogs() {
+  const response = await fetch('/api/catalogs', { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+  if (!response.ok) return;
+  const data = await response.json();
+  catalogItems = data.items || [];
+  renderCatalogTable();
+}
+
+async function handleCatalogSubmit(e) {
+  e.preventDefault();
+  const payload = {
+    id: document.getElementById('catalogId').value || undefined,
+    name: document.getElementById('catalogName').value,
+    sku: document.getElementById('catalogSku').value,
+    category: document.getElementById('catalogCategory').value,
+    price: document.getElementById('catalogPrice').value,
+    stock: document.getElementById('catalogStock').value,
+    status: document.getElementById('catalogStatus').value
+  };
+  const method = payload.id ? 'PUT' : 'POST';
+  const response = await fetch('/api/catalogs', {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getStoredToken()}` },
+    body: JSON.stringify(payload)
+  });
+  if (response.ok) {
+    hideCatalogForm();
+    loadCatalogs();
+  }
+}
+
+async function handleCatalogAction(target) {
+  const id = Number(target.dataset.id);
+  if (target.dataset.action === 'delete-catalog') {
+    await fetch('/api/catalogs', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getStoredToken()}` },
+      body: JSON.stringify({ id })
+    });
+    loadCatalogs();
+    return;
+  }
+  const item = catalogItems.find(c => c.id === id);
+  if (!item) return;
+  document.getElementById('catalogId').value = item.id;
+  document.getElementById('catalogName').value = item.name;
+  document.getElementById('catalogSku').value = item.sku;
+  document.getElementById('catalogCategory').value = item.category;
+  document.getElementById('catalogPrice').value = item.price;
+  document.getElementById('catalogStock').value = item.stock;
+  document.getElementById('catalogStatus').value = item.status;
+  showCatalogForm();
+}
+
+async function renderDashboard() {
+  const user = await loadUserProfile();
+  if (!user) {
+    window.location.href = 'login.html';
+    return;
+  }
+  if (!['user', 'admin'].includes(user.role)) {
+    window.location.href = 'login.html';
+    return;
+  }
+  const welcome = document.getElementById('welcomeName');
+  if (welcome) welcome.textContent = `Welcome, ${user.name}`;
+  const response = await fetch('/api/users', { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+  if (response.ok) {
+    const data = await response.json();
+    users = data.users || [];
+    const totalUsers = document.getElementById('totalUsers');
+    if (totalUsers) totalUsers.textContent = users.length;
+    const activeUsers = document.getElementById('activeUsers');
+    if (activeUsers) activeUsers.textContent = users.filter(u => u.status === 'active').length;
+    const adminCount = document.getElementById('adminCount');
+    if (adminCount) adminCount.textContent = users.filter(u => u.role === 'admin').length;
+  }
+  await loadCatalogs();
+}
+
+async function renderAdmin() {
+  const user = await loadUserProfile();
+  if (!user || user.role !== 'admin') {
+    window.location.href = 'login.html';
+    return;
+  }
   const welcome = document.getElementById('adminWelcome');
   if (welcome) welcome.textContent = `Admin console · ${user.name}`;
   const tbody = document.getElementById('usersTableBody');
   if (!tbody) return;
+  const response = await fetch('/api/users', { headers: { Authorization: `Bearer ${getStoredToken()}` } });
+  if (!response.ok) return;
+  const data = await response.json();
+  users = data.users || [];
   tbody.innerHTML = users.map(u => `
     <tr>
       <td>${u.name}</td>
@@ -140,7 +267,7 @@ function renderAdmin() {
   `).join('');
 }
 
-function handleAdminAction(target) {
+async function handleAdminAction(target) {
   const id = Number(target.dataset.id);
   const action = target.dataset.action;
   const userToEdit = users.find(u => u.id === id);
@@ -151,7 +278,11 @@ function handleAdminAction(target) {
   if (action === 'toggle-status') {
     userToEdit.status = userToEdit.status === 'active' ? 'suspended' : 'active';
   }
-  saveUsers();
+  await fetch('/api/users', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getStoredToken()}` },
+    body: JSON.stringify({ id, action, value: userToEdit[action === 'toggle-role' ? 'role' : 'status'] })
+  });
   renderAdmin();
 }
 
@@ -169,14 +300,25 @@ function bindDashboardActions() {
     const btn = e.target.closest('button');
     if (btn) handleAdminAction(btn);
   });
+  document.getElementById('showCatalogFormBtn')?.addEventListener('click', showCatalogForm);
+  document.getElementById('cancelCatalogBtn')?.addEventListener('click', hideCatalogForm);
+  document.getElementById('catalogForm')?.addEventListener('submit', handleCatalogSubmit);
+  document.getElementById('catalogTableBody')?.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (btn) handleCatalogAction(btn);
+  });
 }
 
-function initApp() {
+async function initApp() {
   bindAuthForms();
   bindDashboardActions();
-  if (document.body.dataset.page === 'dashboard') renderDashboard();
-  if (document.body.dataset.page === 'admin') renderAdmin();
-  if (document.body.dataset.page === 'home' && isLoggedIn()) {
+  if (document.body.dataset.page === 'dashboard') {
+    await renderDashboard();
+  }
+  if (document.body.dataset.page === 'admin') {
+    await renderAdmin();
+  }
+  if (document.body.dataset.page === 'home' && currentUser) {
     const target = currentUser?.role === 'admin' ? 'admin.html' : 'dashboard.html';
     window.location.href = target;
   }

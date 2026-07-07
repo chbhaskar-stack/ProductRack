@@ -9,14 +9,29 @@
   body {
     margin: 0; padding: 0;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
+    background: linear-gradient(135deg, #fff8f2 0%, #f7f2ff 45%, #eef8ff 100%);
     min-height: 100vh;
-    color: #1a1a2e;
+    color: #1b1b1b;
   }
-  .catalogue-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-  .header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-  .header h1 { font-size: 32px; font-weight: 800; color: #16213e; margin: 0 0 8px 0; letter-spacing: -1px; }
-  .header p { color: #666; margin: 0; font-size: 15px; }
+  .catalogue-container { max-width: 1280px; margin: 0 auto; padding: 24px; }
+  .header {
+    background: radial-gradient(circle at top left, rgba(255,255,255,0.9), rgba(255,255,255,0.55));
+    border: 1px solid rgba(15, 52, 96, 0.08);
+    border-radius: 28px; padding: 32px; margin-bottom: 24px; box-shadow: 0 12px 40px rgba(15, 52, 96, 0.08);
+  }
+  .hero-grid { display: grid; grid-template-columns: 1.3fr 0.8fr; gap: 24px; align-items: center; }
+  .header h1 { font-size: 36px; font-weight: 800; color: #16213e; margin: 0 0 10px 0; letter-spacing: -1px; }
+  .header p { color: #5f6470; margin: 0 0 12px 0; font-size: 15px; line-height: 1.6; }
+  .header-badge { display: inline-block; padding: 6px 12px; border-radius: 999px; background: #fff; color: #0f3460; font-size: 12px; font-weight: 700; border: 1px solid rgba(15, 52, 96, 0.15); }
+  .hero-panel {
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    color: white; border-radius: 24px; padding: 24px; min-height: 220px; display: flex; flex-direction: column; justify-content: space-between;
+  }
+  .hero-panel .mini { font-size: 12px; text-transform: uppercase; letter-spacing: 0.24em; opacity: 0.8; }
+  .hero-panel h3 { font-size: 22px; margin: 8px 0; }
+  .hero-panel p { margin: 0; font-size: 14px; opacity: 0.9; }
+  .hero-pill-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+  .hero-pill { padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,0.16); font-size: 12px; }
   .cloud-status { display: inline-flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; border: 1.5px solid #e0e0e0; }
   .cloud-status.connected { border-color: #2ecc71; color: #27ae60; }
   .cloud-status.disconnected { border-color: #e94560; color: #e94560; }
@@ -147,7 +162,54 @@
   .stat-pill:hover { border-color: #0f3460; transform: translateY(-1px); }
   .stat-pill strong { color: #0f3460; }
 
+  .assistant-card {
+    display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    background: linear-gradient(135deg, #16213e 0%, #0f3460 100%);
+    color: #fff; border-radius: 18px; padding: 18px 20px; margin-bottom: 20px;
+    box-shadow: 0 10px 30px rgba(15, 52, 96, 0.2);
+  }
+  .assistant-card h2 { margin: 0 0 6px 0; font-size: 18px; }
+  .assistant-card p { margin: 0; font-size: 13px; opacity: 0.9; }
+  .assist-btn { padding: 11px 16px; border: none; border-radius: 10px; background: #fff; color: #0f3460; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .assist-btn:hover { transform: translateY(-2px); }
+
+  .editorial-strip {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0 18px;
+  }
+  .editorial-card {
+    background: #fff; border-radius: 18px; padding: 18px; border: 1px solid rgba(15, 52, 96, 0.08);
+    box-shadow: 0 8px 24px rgba(15, 52, 96, 0.05);
+  }
+  .editorial-card strong { display: block; margin-bottom: 6px; color: #16213e; }
+  .editorial-card span { color: #6d7380; font-size: 13px; line-height: 1.5; }
+
+  .intro-panel {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(248,250,255,0.95));
+    border: 1px solid rgba(15, 52, 96, 0.08); border-radius: 18px; padding: 16px 18px; margin-bottom: 16px;
+    color: #47506b; font-size: 14px; line-height: 1.6;
+  }
+  .intro-panel strong { color: #16213e; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0 18px;
+  }
+  .toolbar button, .template-card {
+    border: 1px solid rgba(15, 52, 96, 0.12); background: #fff; color: #16213e; border-radius: 999px; padding: 10px 14px; font-weight: 700; cursor: pointer; box-shadow: 0 6px 16px rgba(15, 52, 96, 0.05);
+  }
+  .toolbar button:hover, .template-card:hover { transform: translateY(-1px); border-color: #0f3460; }
+  .template-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .template-card { border-radius: 16px; text-align: left; padding: 14px; }
+  .template-card strong { display: block; margin-bottom: 5px; }
+  .template-card span { display: block; color: #6d7380; font-size: 12px; line-height: 1.5; }
+
   .lightbox-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.88); display: none; justify-content: center; align-items: center; z-index: 200; padding: 40px; backdrop-filter: blur(8px); }
+
+  @media print {
+    body { background: #fff; }
+    .header, .assistant-card, .editorial-strip, .toolbar, .controls, .tabs, .stats-bar, .modal-overlay, .toast, .lightbox-overlay { display: none !important; }
+    .catalogue-container { padding: 0; }
+    .item-card { break-inside: avoid; box-shadow: none; border: 1px solid #ddd; margin-bottom: 12px; }
+  }
   .lightbox-overlay.active { display: flex !important; }
   .lightbox-img { max-width: 88%; max-height: 82vh; border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); animation: imgIn 0.25s ease; }
   @keyframes imgIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
@@ -197,11 +259,28 @@
 
 <div class="catalogue-container">
   <div class="header">
-    <h1>📦 Product Catalogue Manager</h1>
-    <p>Apparels · Fabrics · Accessories · Madeups — Cloud Storage Edition</p>
-    <div class="cloud-status disconnected" id="cloudStatus">
-      <span class="dot"></span>
-      <span id="cloudStatusText">Cloud Storage: Not Configured</span>
+    <div class="hero-grid">
+      <div>
+        <span class="header-badge">Fashion Catalog Studio</span>
+        <h1>Build premium product collections with elegance.</h1>
+        <p>Apparels · Fabrics · Accessories · Madeups — designed for modern fashion brands, wholesalers, and boutique catalog teams.</p>
+        <div class="cloud-status disconnected" id="cloudStatus">
+          <span class="dot"></span>
+          <span id="cloudStatusText">Cloud Storage: Not Configured</span>
+        </div>
+      </div>
+      <div class="hero-panel">
+        <div>
+          <div class="mini">New</div>
+          <h3>Prompt to Collection</h3>
+          <p>Create polished catalog-ready listings from a single idea and publish them in minutes.</p>
+        </div>
+        <div class="hero-pill-row">
+          <span class="hero-pill">✨ AI-style generation</span>
+          <span class="hero-pill">📦 Product cards</span>
+          <span class="hero-pill">☁️ Cloud sync</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -236,6 +315,55 @@
   <div class="tabs" id="categoryTabs"></div>
 
   <div class="stats-bar" id="statsBar"></div>
+
+  <div class="assistant-card">
+    <div>
+      <h2>✨ AI Catalog Studio</h2>
+      <p>Create a polished collection from a single prompt in seconds.</p>
+    </div>
+    <button class="assist-btn" id="generateCatalogBtn">✨ Generate from Prompt</button>
+  </div>
+
+  <div class="editorial-strip">
+    <div class="editorial-card">
+      <strong>Editorial-ready structure</strong>
+      <span>Organize products in a polished layout that feels closer to a fashion lookbook.</span>
+    </div>
+    <div class="editorial-card">
+      <strong>Collection-first workflow</strong>
+      <span>Generate themed listings for apparel, fabrics, accessories, and madeups in one flow.</span>
+    </div>
+    <div class="editorial-card">
+      <strong>Shareable catalog output</strong>
+      <span>Export product data instantly for wholesale sheets, online listings, or client presentations.</span>
+    </div>
+  </div>
+
+  <div class="intro-panel">
+    <strong>How to use this catalog studio:</strong> start with a sample catalog, generate a fresh collection from a prompt, import your CSV, then edit or export products for sharing.
+  </div>
+
+  <div class="toolbar">
+    <button id="sampleBtn">🧪 Load Sample Catalog</button>
+    <button id="importBtn">📥 Import CSV</button>
+    <button id="printBtn">🖨️ Print Catalog</button>
+  </div>
+  <input type="file" id="csvInput" accept=".csv" hidden>
+
+  <div class="template-row">
+    <button class="template-card" data-template="summer">
+      <strong>Summer Essentials</strong>
+      <span>Lightweight staples, breathable fabrics, warm-weather moods.</span>
+    </button>
+    <button class="template-card" data-template="luxury">
+      <strong>Luxury Minimal</strong>
+      <span>Premium textures, muted palettes, elevated silhouettes.</span>
+    </button>
+    <button class="template-card" data-template="festive">
+      <strong>Festive Edit</strong>
+      <span>Bold colors, festive accessories, celebratory collections.</span>
+    </button>
+  </div>
 
   <div class="controls">
     <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search by name, code, color, or material...">
@@ -321,6 +449,48 @@
       <div class="modal-actions">
         <button type="button" class="btn-cancel" id="cancelBtn">Cancel</button>
         <button type="submit" class="btn-save">Save Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Catalog Generator Modal -->
+<div class="modal-overlay" id="catalogGenOverlay">
+  <div class="modal">
+    <h2>✨ Generate Collection</h2>
+    <form id="catalogForm">
+      <div class="form-group">
+        <label>Describe your collection</label>
+        <textarea id="catalogPrompt" required placeholder="e.g. Premium summer streetwear with pastel tones, breathable fabrics, and smart casual styling"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <select id="catalogCategory">
+            <option value="Apparels">Apparels</option>
+            <option value="Fabrics">Fabrics</option>
+            <option value="Accessories">Accessories</option>
+            <option value="Madeups">Madeups</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Items to create</label>
+          <input type="number" id="catalogCount" min="3" max="12" value="6">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Starting Price ($)</label>
+          <input type="number" id="catalogBasePrice" min="10" step="1" value="35">
+        </div>
+        <div class="form-group">
+          <label>Style / Mood</label>
+          <input type="text" id="catalogStyle" placeholder="luxury, minimal, streetwear, bridal">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="catalogCancelBtn">Cancel</button>
+        <button type="submit" class="btn-save">Generate Products</button>
       </div>
     </form>
   </div>
@@ -927,6 +1097,203 @@ document.getElementById('productForm').addEventListener('submit', async (e) => {
   submitBtn.textContent = 'Save Product';
 });
 
+// ===================== AI CATALOG GENERATOR =====================
+function openCatalogGenerator() {
+  document.getElementById('catalogGenOverlay').classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeCatalogGenerator() {
+  document.getElementById('catalogGenOverlay').classList.remove('active');
+  document.body.style.overflow = '';
+}
+
+function titleCase(value) {
+  return value.split(/\s+/).filter(Boolean).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
+function extractMaterial(prompt) {
+  const text = prompt.toLowerCase();
+  if (text.includes('silk')) return '100% Mulberry Silk';
+  if (text.includes('cotton')) return '100% Cotton';
+  if (text.includes('linen')) return 'Linen Blend';
+  if (text.includes('wool')) return 'Premium Wool';
+  if (text.includes('denim')) return 'Denim Cotton';
+  if (text.includes('leather')) return 'Genuine Leather';
+  return 'Premium Fabric';
+}
+
+function buildGeneratedProducts(prompt, category, count, basePrice, style) {
+  const words = prompt.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  const anchor = words[0] || 'signature';
+  const mood = (style || 'premium').trim() || 'premium';
+  const colors = ['Navy Blue', 'Olive', 'Champagne', 'Emerald Green', 'Burgundy', 'Ivory'];
+  const descriptors = ['Classic', 'Studio', 'Limited', 'Signature', 'Modern'];
+  const productTypes = category === 'Fabrics' ? ['Fabric', 'Weave', 'Textile'] : category === 'Accessories' ? ['Accessory', 'Carry', 'Case'] : category === 'Madeups' ? ['Set', 'Cover', 'Home Piece'] : ['Wear', 'Layer', 'Essential'];
+
+  return Array.from({ length: count }, (_, index) => {
+    const descriptor = descriptors[index % descriptors.length];
+    const productType = productTypes[index % productTypes.length];
+    const price = basePrice + (index * 12) + (index % 3) * 5;
+    const mrp = price + 18 + (index % 4) * 6;
+    const name = `${titleCase(mood)} ${titleCase(anchor)} ${productType} ${index + 1}`;
+    return {
+      id: Date.now() + index,
+      name,
+      category,
+      code: `GEN${String(index + 1).padStart(3, '0')}`,
+      costPrice: Math.round(price * 0.7),
+      price,
+      mrp,
+      color: colors[index % colors.length],
+      stock: 20 + (index % 5) * 10,
+      material: extractMaterial(prompt),
+      desc: `${descriptor} ${mood} collection piece inspired by “${prompt.trim()}”.`,
+      images: [],
+      cloudSynced: false
+    };
+  });
+}
+
+function handleCatalogSubmit(e) {
+  e.preventDefault();
+  const prompt = document.getElementById('catalogPrompt').value.trim();
+  const category = document.getElementById('catalogCategory').value;
+  const count = Math.max(3, Math.min(12, parseInt(document.getElementById('catalogCount').value) || 6));
+  const basePrice = Math.max(10, parseInt(document.getElementById('catalogBasePrice').value) || 35);
+  const style = document.getElementById('catalogStyle').value.trim();
+
+  if (!prompt) {
+    showToast('Please describe the collection first.', 'error');
+    return;
+  }
+
+  const generated = buildGeneratedProducts(prompt, category, count, basePrice, style);
+  items = items.concat(generated);
+  saveItems();
+  closeCatalogGenerator();
+  renderTabs();
+  renderStats();
+  renderItems();
+  showToast(`Generated ${generated.length} products for your collection.`, 'success');
+}
+
+// ===================== TEMPLATE + IMPORT + PRINT =====================
+function applyTemplate(template) {
+  const templates = {
+    summer: { prompt: 'bright summer streetwear with breathable natural fibers and relaxed lounge styling', category: 'Apparels', count: 6, basePrice: 32, style: 'summer' },
+    luxury: { prompt: 'luxury minimal fashion with premium texture, muted tones, and refined tailoring', category: 'Fabrics', count: 5, basePrice: 48, style: 'luxury' },
+    festive: { prompt: 'festive collection with rich colors, statement accessories, and celebratory finishes', category: 'Accessories', count: 6, basePrice: 28, style: 'festive' }
+  };
+  const config = templates[template];
+  if (!config) return;
+  document.getElementById('catalogPrompt').value = config.prompt;
+  document.getElementById('catalogCategory').value = config.category;
+  document.getElementById('catalogCount').value = config.count;
+  document.getElementById('catalogBasePrice').value = config.basePrice;
+  document.getElementById('catalogStyle').value = config.style;
+  openCatalogGenerator();
+}
+
+function loadSampleCatalog() {
+  if (!confirm('Load a curated sample catalog and replace the current list?')) return;
+  items = [
+    { id: 101, name: 'Studio Linen Shirt', category: 'Apparels', code: 'SMP001', costPrice: 22, price: 38, mrp: 49, color: 'Sand', stock: 70, material: 'Linen Blend', desc: 'Relaxed tailoring with premium drape.', images: [], cloudSynced: false },
+    { id: 102, name: 'Silk Wrap Scarf', category: 'Accessories', code: 'SMP002', costPrice: 18, price: 32, mrp: 42, color: 'Rose', stock: 40, material: 'Silk', desc: 'Soft evening scarf for polished styling.', images: [], cloudSynced: false },
+    { id: 103, name: 'Cotton Weave Fabric', category: 'Fabrics', code: 'SMP003', costPrice: 12, price: 24, mrp: 31, color: 'Ivory', stock: 180, material: 'Cotton', desc: 'Breathable weave designed for modern garments.', images: [], cloudSynced: false },
+    { id: 104, name: 'Embroidered Cushion Set', category: 'Madeups', code: 'SMP004', costPrice: 26, price: 46, mrp: 58, color: 'Emerald', stock: 55, material: 'Cotton Canvas', desc: 'Decorative home textile with artisan detail.', images: [], cloudSynced: false }
+  ];
+  saveItems();
+  renderTabs();
+  renderStats();
+  renderItems();
+  showToast('Sample catalog loaded.', 'success');
+}
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let value = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    const next = text[i + 1];
+    if (char === '"') {
+      if (inQuotes && next === '"') {
+        value += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === ',' && !inQuotes) {
+      row.push(value);
+      value = '';
+    } else if ((char === '\n' || char === '\r') && !inQuotes) {
+      if (char === '\r' && next === '\n') i++;
+      row.push(value);
+      if (row.some(cell => cell !== '')) rows.push(row);
+      row = [];
+      value = '';
+    } else {
+      value += char;
+    }
+  }
+  if (value.length || row.length) {
+    row.push(value);
+    if (row.some(cell => cell !== '')) rows.push(row);
+  }
+  return rows;
+}
+
+function importCsv(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const rows = parseCsv(e.target.result || '');
+    if (rows.length < 2) {
+      showToast('No usable rows found in CSV.', 'error');
+      return;
+    }
+    const headers = rows[0].map(h => h.trim().toLowerCase());
+    const imported = rows.slice(1).map((row, index) => {
+      const values = Object.fromEntries(headers.map((header, idx) => [header, (row[idx] || '').trim()]));
+      return {
+        id: Date.now() + index,
+        name: values.name || values.product || `Imported Product ${index + 1}`,
+        category: values.category || 'Apparels',
+        code: values.code || values.sku || `IMP${String(index + 1).padStart(3, '0')}`,
+        costPrice: parseFloat(values.costprice || values.cost || 0) || 0,
+        price: parseFloat(values.price || values.sellingprice || values.selling || 0) || 0,
+        mrp: parseFloat(values.mrp || 0) || 0,
+        color: values.color || 'N/A',
+        stock: parseInt(values.stock || 0, 10) || 0,
+        material: values.material || 'Premium Fabric',
+        desc: values.description || values.desc || 'Imported from CSV.',
+        images: [],
+        cloudSynced: false
+      };
+    }).filter(item => item.name);
+
+    if (!imported.length) {
+      showToast('No products were imported.', 'error');
+      return;
+    }
+
+    items = items.concat(imported);
+    saveItems();
+    renderTabs();
+    renderStats();
+    renderItems();
+    showToast(`Imported ${imported.length} products.`, 'success');
+  };
+  reader.readAsText(file);
+}
+
+function printCatalog() {
+  window.print();
+}
+
 // ===================== EXPORT =====================
 document.getElementById('exportBtn').addEventListener('click', () => {
   const headers = ['ID', 'Name', 'Category', 'SKU', 'Cost Price', 'Selling Price', 'MRP', 'Color', 'Stock', 'Material', 'Description', 'Image Count', 'Cloud Synced'];
@@ -959,6 +1326,15 @@ document.getElementById('modalOverlay').addEventListener('click', (e) => { if (e
 document.getElementById('searchBox').addEventListener('input', renderItems);
 
 document.getElementById('syncBtn').addEventListener('click', showInlineConfig);
+document.getElementById('generateCatalogBtn').addEventListener('click', openCatalogGenerator);
+document.getElementById('catalogCancelBtn').addEventListener('click', closeCatalogGenerator);
+document.getElementById('catalogGenOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('catalogGenOverlay')) closeCatalogGenerator(); });
+document.getElementById('catalogForm').addEventListener('submit', handleCatalogSubmit);
+document.getElementById('sampleBtn').addEventListener('click', loadSampleCatalog);
+document.getElementById('importBtn').addEventListener('click', () => document.getElementById('csvInput').click());
+document.getElementById('csvInput').addEventListener('change', (e) => { importCsv(e.target.files[0]); e.target.value = ''; });
+document.getElementById('printBtn').addEventListener('click', printCatalog);
+document.querySelectorAll('.template-card').forEach(btn => btn.addEventListener('click', () => applyTemplate(btn.dataset.template)));
 
 document.getElementById('lightboxClose').addEventListener('click', closeLightbox);
 document.getElementById('lightboxOverlay').addEventListener('click', (e) => { if (e.target === document.getElementById('lightboxOverlay')) closeLightbox(); });
