@@ -1,209 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Product Catalogue Manager - Cloud Edition</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; padding: 0;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e4e8ec 100%);
-    min-height: 100vh;
-    color: #1a1a2e;
-  }
-  .catalogue-container { max-width: 1200px; margin: 0 auto; padding: 24px; }
-  .header { text-align: center; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid #e0e0e0; }
-  .header h1 { font-size: 32px; font-weight: 800; color: #16213e; margin: 0 0 8px 0; letter-spacing: -1px; }
-  .header p { color: #666; margin: 0; font-size: 15px; }
-  .cloud-status { display: inline-flex; align-items: center; gap: 6px; background: #fff; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; border: 1.5px solid #e0e0e0; }
-  .cloud-status.connected { border-color: #2ecc71; color: #27ae60; }
-  .cloud-status.disconnected { border-color: #e94560; color: #e94560; }
-  .cloud-status .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
-  .cloud-status.connected .dot { background: #2ecc71; }
-  .cloud-status.disconnected .dot { background: #e94560; }
-
-  .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-  .tab-btn { padding: 10px 20px; border: 2px solid #e0e0e0; background: #fff; border-radius: 10px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; color: #555; }
-  .tab-btn:hover { border-color: #0f3460; color: #0f3460; transform: translateY(-1px); }
-  .tab-btn.active { background: #0f3460; color: #fff; border-color: #0f3460; box-shadow: 0 4px 12px rgba(15, 52, 96, 0.2); }
-
-  .controls { display: flex; gap: 12px; margin-bottom: 24px; align-items: center; flex-wrap: wrap; }
-  .search-box { flex: 1; min-width: 220px; padding: 12px 18px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; outline: none; transition: all 0.2s; background: #fff; }
-  .search-box:focus { border-color: #0f3460; box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.1); }
-  .add-btn { padding: 12px 24px; background: #e94560; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; font-size: 14px; box-shadow: 0 4px 12px rgba(233, 69, 96, 0.25); }
-  .add-btn:hover { background: #d13650; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(233, 69, 96, 0.35); }
-  .export-btn { padding: 12px 20px; background: #16213e; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; white-space: nowrap; }
-  .export-btn:hover { background: #0f3460; transform: translateY(-2px); }
-  .sync-btn { padding: 12px 20px; background: #27ae60; color: #fff; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 14px; white-space: nowrap; }
-  .sync-btn:hover { background: #219a52; transform: translateY(-2px); }
-  .sync-btn:disabled { background: #95a5a6; cursor: not-allowed; transform: none; }
-
-  .items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px; }
-  .item-card { background: #fff; border: 2px solid #f0f0f0; border-radius: 18px; overflow: hidden; transition: all 0.25s; position: relative; }
-  .item-card:hover { border-color: #0f3460; box-shadow: 0 12px 32px rgba(15, 52, 96, 0.12); transform: translateY(-4px); }
-  .item-image { width: 100%; height: 220px; object-fit: cover; background: linear-gradient(135deg, #f0f4f8 0%, #e8ecf0 100%); display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; }
-  .item-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
-  .item-image:hover img { transform: scale(1.05); }
-  .item-image .img-placeholder { font-size: 14px; color: #999; text-align: center; padding: 20px; }
-  .item-image .img-placeholder .icon { font-size: 56px; display: block; margin-bottom: 8px; opacity: 0.5; }
-  .item-image .img-count { position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.65); color: #fff; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; backdrop-filter: blur(4px); }
-  .item-image .cloud-badge { position: absolute; top: 12px; left: 12px; background: rgba(39, 174, 96, 0.85); color: #fff; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; backdrop-filter: blur(4px); }
-  .item-image .cloud-badge.local { background: rgba(149, 165, 166, 0.85); }
-  .item-body { padding: 20px; }
-  .item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
-  .item-name { font-weight: 700; font-size: 17px; color: #16213e; margin: 0; line-height: 1.3; flex: 1; padding-right: 8px; }
-  .item-code { font-size: 11px; color: #888; background: #f5f5f5; padding: 3px 10px; border-radius: 6px; font-family: 'SF Mono', monospace; white-space: nowrap; letter-spacing: 0.5px; }
-  .item-details { display: flex; flex-direction: column; gap: 7px; }
-  .detail-row { display: flex; justify-content: space-between; font-size: 13px; align-items: center; }
-  .detail-label { color: #888; font-weight: 500; }
-  .detail-value { font-weight: 600; color: #333; }
-  .price-tag { color: #e94560; font-weight: 700; font-size: 16px; }
-  .cost-tag { color: #0f3460; font-weight: 600; font-size: 13px; }
-  .mrp-tag { color: #aaa; font-size: 12px; text-decoration: line-through; }
-  .color-dot { display: inline-block; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #e0e0e0; vertical-align: middle; margin-right: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-  .stock-badge { display: inline-block; padding: 4px 12px; border-radius: 14px; font-size: 11px; font-weight: 700; }
-  .stock-high { background: #d4edda; color: #155724; }
-  .stock-med { background: #fff3cd; color: #856404; }
-  .stock-low { background: #f8d7da; color: #721c24; }
-  .item-actions { display: flex; gap: 10px; margin-top: 14px; padding-top: 14px; border-top: 1px solid #f0f0f0; }
-  .action-btn { flex: 1; padding: 8px 0; border: 1.5px solid #e0e0e0; background: #fff; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; font-weight: 600; color: #555; }
-  .action-btn:hover { background: #f8f9fa; border-color: #0f3460; color: #0f3460; transform: translateY(-1px); }
-  .action-btn.delete:hover { border-color: #e94560; color: #e94560; background: #fff5f5; }
-
-  /* MODAL STYLES - FIXED */
-  .modal-overlay {
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.55);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 100;
-    padding: 20px;
-    overflow-y: auto;
-    backdrop-filter: blur(4px);
-  }
-  .modal-overlay.active {
-    display: flex !important;
-  }
-  .modal {
-    background: #fff;
-    border-radius: 20px;
-    padding: 32px;
-    width: 100%;
-    max-width: 540px;
-    box-shadow: 0 24px 80px rgba(0,0,0,0.25);
-    max-height: 92vh;
-    overflow-y: auto;
-    animation: modalIn 0.3s ease;
-    position: relative;
-  }
-  @keyframes modalIn { from { opacity: 0; transform: translateY(20px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-  .modal h2 { margin: 0 0 24px 0; font-size: 22px; color: #16213e; font-weight: 700; }
-  .form-group { margin-bottom: 16px; }
-  .form-group label { display: block; font-size: 13px; font-weight: 700; color: #555; margin-bottom: 6px; }
-  .form-group input, .form-group select, .form-group textarea {
-    width: 100%; padding: 12px 14px; border: 2px solid #e8e8e8; border-radius: 10px;
-    font-size: 14px; outline: none; box-sizing: border-box; font-family: inherit;
-    transition: all 0.2s; background: #fafafa;
-  }
-  .form-group textarea { resize: vertical; min-height: 70px; }
-  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-    border-color: #0f3460; background: #fff; box-shadow: 0 0 0 3px rgba(15, 52, 96, 0.08);
-  }
-  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-
-  .image-upload-area { border: 2px dashed #ccc; border-radius: 14px; padding: 28px; text-align: center; cursor: pointer; transition: all 0.2s; background: #fafafa; }
-  .image-upload-area:hover { border-color: #0f3460; background: #f0f4f8; }
-  .image-upload-area .upload-icon { font-size: 40px; margin-bottom: 10px; }
-  .image-upload-area p { margin: 0; color: #666; font-size: 13px; line-height: 1.5; }
-  .image-upload-area input[type="file"] { display: none; }
-  .image-preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
-  .image-preview-item { position: relative; aspect-ratio: 1; border-radius: 10px; overflow: hidden; border: 2px solid #e0e0e0; background: #f5f5f5; }
-  .image-preview-item img { width: 100%; height: 100%; object-fit: cover; }
-  .image-preview-item .img-name { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.75); color: #fff; font-size: 10px; padding: 4px 8px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-family: 'SF Mono', monospace; }
-  .image-preview-item .remove-img { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; background: rgba(233, 69, 96, 0.9); color: #fff; border: none; border-radius: 50%; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; line-height: 1; transition: all 0.15s; }
-  .image-preview-item .remove-img:hover { background: #d13650; transform: scale(1.1); }
-  .image-preview-item .upload-progress { position: absolute; bottom: 0; left: 0; height: 4px; background: #27ae60; transition: width 0.3s; }
-  .image-preview-item .upload-progress.error { background: #e94560; }
-
-  .modal-actions { display: flex; gap: 12px; margin-top: 24px; }
-  .modal-actions button { flex: 1; padding: 14px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; transition: all 0.2s; }
-  .btn-save { background: #0f3460; color: #fff; box-shadow: 0 4px 12px rgba(15, 52, 96, 0.25); }
-  .btn-save:hover { background: #1a4a7a; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(15, 52, 96, 0.35); }
-  .btn-cancel { background: #f0f0f0; color: #555; }
-  .btn-cancel:hover { background: #e0e0e0; transform: translateY(-2px); }
-
-  .empty-state { text-align: center; padding: 80px 20px; color: #888; }
-  .empty-state .big-icon { font-size: 64px; margin-bottom: 20px; opacity: 0.3; }
-  .empty-state h3 { margin: 0 0 8px 0; font-size: 20px; color: #555; }
-  .empty-state p { margin: 0; font-size: 14px; }
-
-  .stats-bar { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
-  .stat-pill { background: #fff; padding: 10px 18px; border-radius: 24px; font-size: 13px; font-weight: 600; color: #555; border: 1.5px solid #e8e8e8; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: all 0.2s; }
-  .stat-pill:hover { border-color: #0f3460; transform: translateY(-1px); }
-  .stat-pill strong { color: #0f3460; }
-
-  .lightbox-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.88); display: none; justify-content: center; align-items: center; z-index: 200; padding: 40px; backdrop-filter: blur(8px); }
-  .lightbox-overlay.active { display: flex !important; }
-  .lightbox-img { max-width: 88%; max-height: 82vh; border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,0.5); animation: imgIn 0.25s ease; }
-  @keyframes imgIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-  .lightbox-close { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; background: none; border: none; line-height: 1; opacity: 0.8; transition: opacity 0.2s; }
-  .lightbox-close:hover { opacity: 1; }
-  .lightbox-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.15); color: #fff; border: none; width: 52px; height: 52px; border-radius: 50%; font-size: 22px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; backdrop-filter: blur(4px); }
-  .lightbox-nav:hover { background: rgba(255,255,255,0.3); transform: translateY(-50%) scale(1.08); }
-  .lightbox-prev { left: 24px; }
-  .lightbox-next { right: 24px; }
-  .lightbox-counter { position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 14px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 20px; font-weight: 600; }
-  .lightbox-filename { position: absolute; top: 24px; left: 50%; transform: translateX(-50%); color: #fff; font-size: 13px; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 10px; font-family: 'SF Mono', monospace; letter-spacing: 0.5px; }
-
-  .toast { position: fixed; bottom: 24px; right: 24px; background: #16213e; color: #fff; padding: 14px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; z-index: 300; transform: translateY(100px); opacity: 0; transition: all 0.3s ease; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-  .toast.active { transform: translateY(0); opacity: 1; }
-  .toast.error { background: #e94560; }
-  .toast.success { background: #27ae60; }
-
-  /* Inline config panel */
-  .inline-config {
-    background: #fff;
-    border: 2px solid #e0e0e0;
-    border-radius: 16px;
-    padding: 24px;
-    margin-bottom: 24px;
-    display: none;
-  }
-  .inline-config.active { display: block; }
-  .inline-config h3 { margin: 0 0 16px 0; font-size: 18px; color: #16213e; }
-  .inline-config .form-row { margin-bottom: 14px; }
-  .inline-config input { width: 100%; padding: 12px 14px; border: 2px solid #e8e8e8; border-radius: 10px; font-size: 14px; }
-  .inline-config input:focus { border-color: #0f3460; outline: none; }
-  .inline-config .btn-group { display: flex; gap: 10px; margin-top: 16px; }
-  .inline-config .btn-group button { flex: 1; padding: 12px; border-radius: 10px; border: none; font-weight: 700; cursor: pointer; font-size: 14px; }
-  .inline-config .btn-primary { background: #0f3460; color: #fff; }
-  .inline-config .btn-secondary { background: #f0f0f0; color: #555; }
-
-  @media (max-width: 768px) {
-    .items-grid { grid-template-columns: 1fr; }
-    .form-row, .form-row-3 { grid-template-columns: 1fr; }
-    .header h1 { font-size: 24px; }
-    .controls { flex-direction: column; align-items: stretch; }
-    .search-box { width: 100%; }
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catalog SaaS Studio</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
-
-<div class="catalogue-container">
-  <div class="header">
-    <h1>📦 Product Catalogue Manager</h1>
-    <p>Apparels · Fabrics · Accessories · Madeups — Cloud Storage Edition</p>
-    <div class="cloud-status disconnected" id="cloudStatus">
-      <span class="dot"></span>
-      <span id="cloudStatusText">Cloud Storage: Not Configured</span>
+<body data-page="home">
+  <nav>
+    <div class="navbar">
+      <a class="brand" href="index.html">Catalog SaaS Studio</a>
+      <div class="nav-links">
+        <a href="login.html">Login</a>
+        <a href="register.html" class="btn btn-primary">Create Account</a>
+      </div>
     </div>
-  </div>
+  </nav>
+  <main class="container">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>Launch a premium catalog platform for your business.</h1>
+        <p>Manage collections, onboard users, and control admin access from one modern SaaS workspace.</p>
+        <div class="hero-actions">
+          <a href="register.html" class="btn btn-primary">Start Free</a>
+          <a href="login.html" class="btn btn-secondary">Sign In</a>
+        </div>
+      </div>
+      <div class="hero-card hero-side">
+        <h3>Why teams choose this platform</h3>
+        <ul>
+          <li>Multi-user workspace with role-based access</li>
+          <li>Admin controls over every created account</li>
+          <li>Catalog generation, imports, and export workflows</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature">
+        <h3>Role-Based Access</h3>
+        <p>Separate admin and user experiences with complete control.</p>
+      </div>
+      <div class="feature">
+        <h3>Advanced Cataloging</h3>
+        <p>Generate products, import data, and publish polished listings.</p>
+      </div>
+      <div class="feature">
+        <h3>Admin Oversight</h3>
+        <p>Promote, suspend, and manage every user from one console.</p>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
 
   <!-- INLINE CONFIG PANEL -->
   <div class="inline-config" id="inlineConfig">

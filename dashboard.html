@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Dashboard · Catalog SaaS Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="dashboard">
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="dashboard.html">Catalog SaaS</a>
+      <a class="active" href="dashboard.html">Dashboard</a>
+      <a href="catalogue_cloud_app_v2.html">Catalog Manager</a>
+      <a href="#" id="logoutBtn">Logout</a>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="welcomeName">Welcome</h2>
+          <p class="small">Your user workspace and activity overview.</p>
+        </div>
+        <a href="catalogue_cloud_app_v2.html" class="btn btn-primary">Open Catalog Studio</a>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><span class="small">Total users</span><strong id="totalUsers">0</strong></div>
+        <div class="kpi"><span class="small">Active accounts</span><strong id="activeUsers">0</strong></div>
+        <div class="kpi"><span class="small">Admin accounts</span><strong id="adminCount">0</strong></div>
+      </div>
+      <div class="panel" style="padding:20px;">
+        <h3>Workspace overview</h3>
+        <p class="small">You can manage catalog tasks, review team availability, and jump into the catalog studio.</p>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

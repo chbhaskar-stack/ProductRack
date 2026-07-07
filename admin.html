@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard · Catalog SaaS Studio</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-page="admin">
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="admin.html">Admin Console</a>
+      <a class="active" href="admin.html">Users</a>
+      <a href="dashboard.html">User Dashboard</a>
+      <a href="catalogue_cloud_app_v2.html">Catalog Studio</a>
+      <a href="#" id="adminLogoutBtn">Logout</a>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h2 id="adminWelcome">Admin console</h2>
+          <p class="small">Manage all accounts from one place.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
